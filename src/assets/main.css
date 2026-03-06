@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg:      #ffffff;
+    --color-card:    #f9fafb;
+    --color-hover:   #f3f4f6;
+    --color-border:  #e5e7eb;
+    --color-text:    #111827;
+    --color-muted:   #6b7280;
+  }
+
+  .dark {
+    --color-bg:     #0f1117;
+    --color-card:   #1a1d27;
+    --color-hover:  #232736;
+    --color-border: #2d3148;
+    --color-text:   #f9fafb;
+    --color-muted:  #9ca3af;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  * {
+    @apply border-[--color-border];
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-gray-300 dark:bg-gray-600; }
+}
+
+@layer utilities {
+  .bg-card   { background-color: var(--color-card); }
+  .bg-hover  { background-color: var(--color-hover); }
+  .text-muted { color: var(--color-muted); }
+  .border-base { border-color: var(--color-border); }
+}
