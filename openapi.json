@@ -1,0 +1,5964 @@
+{
+"openapi": "3.1.0",
+"info": {
+"title": "FamilyMarket HR API",
+"version": "1.0.0"
+},
+"paths": {
+"/api/auth/login": {
+"post": {
+"tags": [
+"Auth"
+],
+"summary": "Login",
+"operationId": "login_api_auth_login_post",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LoginSchema"
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/TokenResponse"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/auth/refresh": {
+"post": {
+"tags": [
+"Auth"
+],
+"summary": "Refresh",
+"operationId": "refresh_api_auth_refresh_post",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/RefreshSchema"
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/auth/me": {
+"get": {
+"tags": [
+"Auth"
+],
+"summary": "Me",
+"operationId": "me_api_auth_me_get",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/UserOut"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/auth/change-password": {
+"patch": {
+"tags": [
+"Auth"
+],
+"summary": "Change Password",
+"operationId": "change_password_api_auth_change_password_patch",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/ChangePasswordSchema"
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/branches": {
+"get": {
+"tags": [
+"Branches"
+],
+"summary": "List Branches",
+"operationId": "list_branches_api_branches_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "is_active",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+{
+"name": "search",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Search"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedBranches"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Branches"
+],
+"summary": "Create Branch",
+"operationId": "create_branch_api_branches_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BranchCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BranchOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/branches/{branch_id}": {
+"get": {
+"tags": [
+"Branches"
+],
+"summary": "Get Branch",
+"operationId": "get_branch_api_branches__branch_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "branch_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Branch Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BranchOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"patch": {
+"tags": [
+"Branches"
+],
+"summary": "Update Branch",
+"operationId": "update_branch_api_branches__branch_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "branch_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Branch Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BranchUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BranchOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"delete": {
+"tags": [
+"Branches"
+],
+"summary": "Delete Branch",
+"operationId": "delete_branch_api_branches__branch_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "branch_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Branch Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/departments": {
+"get": {
+"tags": [
+"Departments"
+],
+"summary": "List Departments",
+"operationId": "list_departments_api_departments_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "branch_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+}
+},
+{
+"name": "is_active",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+{
+"name": "search",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Search"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedDepartments"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Departments"
+],
+"summary": "Create Department",
+"operationId": "create_department_api_departments_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DepartmentCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DepartmentOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/departments/{dept_id}": {
+"get": {
+"tags": [
+"Departments"
+],
+"summary": "Get Department",
+"operationId": "get_department_api_departments__dept_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "dept_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Dept Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DepartmentOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"patch": {
+"tags": [
+"Departments"
+],
+"summary": "Update Department",
+"operationId": "update_department_api_departments__dept_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "dept_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Dept Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DepartmentUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DepartmentOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"delete": {
+"tags": [
+"Departments"
+],
+"summary": "Delete Department",
+"operationId": "delete_department_api_departments__dept_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "dept_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Dept Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/employees": {
+"get": {
+"tags": [
+"Employees"
+],
+"summary": "List Employees",
+"operationId": "list_employees_api_employees_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "branch_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+}
+},
+{
+"name": "department_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+}
+},
+{
+"name": "is_active",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+{
+"name": "search",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Search"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedEmployees"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Employees"
+],
+"summary": "Create Employee",
+"operationId": "create_employee_api_employees_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/employees/me": {
+"get": {
+"tags": [
+"Employees"
+],
+"summary": "Get My Profile",
+"operationId": "get_my_profile_api_employees_me_get",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeDetail"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/employees/{employee_id}": {
+"get": {
+"tags": [
+"Employees"
+],
+"summary": "Get Employee",
+"operationId": "get_employee_api_employees__employee_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "employee_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Employee Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeDetail"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"patch": {
+"tags": [
+"Employees"
+],
+"summary": "Update Employee",
+"operationId": "update_employee_api_employees__employee_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "employee_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Employee Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/EmployeeOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"delete": {
+"tags": [
+"Employees"
+],
+"summary": "Delete Employee",
+"operationId": "delete_employee_api_employees__employee_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "employee_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Employee Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/attendance": {
+"get": {
+"tags": [
+"Attendance"
+],
+"summary": "List Attendance",
+"operationId": "list_attendance_api_attendance_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "branch_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+}
+},
+{
+"name": "date_from",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string",
+"format": "date"
+},
+{
+"type": "null"
+}
+],
+"title": "Date From"
+}
+},
+{
+"name": "date_to",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string",
+"format": "date"
+},
+{
+"type": "null"
+}
+],
+"title": "Date To"
+}
+},
+{
+"name": "status",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/AttendanceStatus"
+},
+{
+"type": "null"
+}
+],
+"title": "Status"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedAttendance"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Attendance"
+],
+"summary": "Create Attendance",
+"operationId": "create_attendance_api_attendance_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/attendance/check-in": {
+"post": {
+"tags": [
+"Attendance"
+],
+"summary": "Check In",
+"operationId": "check_in_api_attendance_check_in_post",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/CheckInRequest"
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/attendance/check-out": {
+"post": {
+"tags": [
+"Attendance"
+],
+"summary": "Check Out",
+"operationId": "check_out_api_attendance_check_out_post",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/CheckOutRequest"
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/attendance/summary": {
+"get": {
+"tags": [
+"Attendance"
+],
+"summary": "Get Summary",
+"operationId": "get_summary_api_attendance_summary_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "employee_id",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"maximum": 12,
+"minimum": 1,
+"title": "Month"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceSummary"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/attendance/{attendance_id}": {
+"get": {
+"tags": [
+"Attendance"
+],
+"summary": "Get Attendance",
+"operationId": "get_attendance_api_attendance__attendance_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "attendance_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Attendance Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"patch": {
+"tags": [
+"Attendance"
+],
+"summary": "Update Attendance",
+"operationId": "update_attendance_api_attendance__attendance_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "attendance_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Attendance Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/AttendanceOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"delete": {
+"tags": [
+"Attendance"
+],
+"summary": "Delete Attendance",
+"operationId": "delete_attendance_api_attendance__attendance_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "attendance_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Attendance Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/salary": {
+"get": {
+"tags": [
+"Salary"
+],
+"summary": "List Salary Records",
+"operationId": "list_salary_records_api_salary_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer",
+"maximum": 12,
+"minimum": 1
+},
+{
+"type": "null"
+}
+],
+"title": "Month"
+}
+},
+{
+"name": "status",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/SalaryStatus"
+},
+{
+"type": "null"
+}
+],
+"title": "Status"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedSalaryRecords"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Salary"
+],
+"summary": "Create Salary Record",
+"operationId": "create_salary_record_api_salary_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/SalaryRecordCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/SalaryRecordOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/salary/{record_id}": {
+"get": {
+"tags": [
+"Salary"
+],
+"summary": "Get Salary Record",
+"operationId": "get_salary_record_api_salary__record_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "record_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Record Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/SalaryRecordOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/salary/{record_id}/status": {
+"patch": {
+"tags": [
+"Salary"
+],
+"summary": "Update Salary Status",
+"operationId": "update_salary_status_api_salary__record_id__status_patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "record_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Record Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/SalaryStatusUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/SalaryRecordOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/bonuses": {
+"get": {
+"tags": [
+"Bonuses"
+],
+"summary": "List Bonuses",
+"operationId": "list_bonuses_api_bonuses_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer",
+"maximum": 12,
+"minimum": 1
+},
+{
+"type": "null"
+}
+],
+"title": "Month"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedBonuses"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Bonuses"
+],
+"summary": "Create Bonus",
+"operationId": "create_bonus_api_bonuses_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BonusCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/BonusOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/bonuses/{bonus_id}": {
+"delete": {
+"tags": [
+"Bonuses"
+],
+"summary": "Delete Bonus",
+"operationId": "delete_bonus_api_bonuses__bonus_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "bonus_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Bonus Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/deductions": {
+"get": {
+"tags": [
+"Deductions"
+],
+"summary": "List Deductions",
+"operationId": "list_deductions_api_deductions_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer",
+"maximum": 12,
+"minimum": 1
+},
+{
+"type": "null"
+}
+],
+"title": "Month"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedDeductions"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Deductions"
+],
+"summary": "Create Deduction",
+"operationId": "create_deduction_api_deductions_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DeductionCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DeductionOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/deductions/{deduction_id}": {
+"delete": {
+"tags": [
+"Deductions"
+],
+"summary": "Delete Deduction",
+"operationId": "delete_deduction_api_deductions__deduction_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "deduction_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Deduction Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/kpi": {
+"get": {
+"tags": [
+"KPI"
+],
+"summary": "List Kpis",
+"operationId": "list_kpis_api_kpi_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer",
+"maximum": 12,
+"minimum": 1
+},
+{
+"type": "null"
+}
+],
+"title": "Month"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedKPI"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"KPI"
+],
+"summary": "Create Kpi",
+"operationId": "create_kpi_api_kpi_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPICreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPIOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/kpi/summary": {
+"get": {
+"tags": [
+"KPI"
+],
+"summary": "Get Summary",
+"operationId": "get_summary_api_kpi_summary_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "employee_id",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Employee Id"
+}
+},
+{
+"name": "year",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Year"
+}
+},
+{
+"name": "month",
+"in": "query",
+"required": true,
+"schema": {
+"type": "integer",
+"maximum": 12,
+"minimum": 1,
+"title": "Month"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPISummary"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/kpi/{kpi_id}": {
+"get": {
+"tags": [
+"KPI"
+],
+"summary": "Get Kpi",
+"operationId": "get_kpi_api_kpi__kpi_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "kpi_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Kpi Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPIOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"patch": {
+"tags": [
+"KPI"
+],
+"summary": "Update Kpi",
+"operationId": "update_kpi_api_kpi__kpi_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "kpi_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Kpi Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPIUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPIOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"delete": {
+"tags": [
+"KPI"
+],
+"summary": "Delete Kpi",
+"operationId": "delete_kpi_api_kpi__kpi_id__delete",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "kpi_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Kpi Id"
+}
+}
+],
+"responses": {
+"204": {
+"description": "Successful Response"
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/kpi/templates/list": {
+"get": {
+"tags": [
+"KPI"
+],
+"summary": "List Templates",
+"operationId": "list_templates_api_kpi_templates_list_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "department_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+}
+},
+{
+"name": "is_active",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"type": "array",
+"items": {
+"$ref": "#/components/schemas/KPITemplateOut"
+},
+"title": "Response List Templates Api Kpi Templates List Get"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/kpi/templates": {
+"post": {
+"tags": [
+"KPI"
+],
+"summary": "Create Template",
+"operationId": "create_template_api_kpi_templates_post",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPITemplateCreate"
+}
+}
+},
+"required": true
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPITemplateOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/kpi/templates/{template_id}": {
+"patch": {
+"tags": [
+"KPI"
+],
+"summary": "Update Template",
+"operationId": "update_template_api_kpi_templates__template_id__patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "template_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Template Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPITemplateUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/KPITemplateOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/leaves": {
+"get": {
+"tags": [
+"Leaves"
+],
+"summary": "List Leaves",
+"operationId": "list_leaves_api_leaves_get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "page",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"minimum": 1,
+"default": 1,
+"title": "Page"
+}
+},
+{
+"name": "size",
+"in": "query",
+"required": false,
+"schema": {
+"type": "integer",
+"maximum": 100,
+"minimum": 1,
+"default": 20,
+"title": "Size"
+}
+},
+{
+"name": "employee_id",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+{
+"name": "status",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/LeaveStatus"
+},
+{
+"type": "null"
+}
+],
+"title": "Status"
+}
+},
+{
+"name": "leave_type",
+"in": "query",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/LeaveType"
+},
+{
+"type": "null"
+}
+],
+"title": "Leave Type"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/PaginatedLeaves"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+},
+"post": {
+"tags": [
+"Leaves"
+],
+"summary": "Create Leave",
+"operationId": "create_leave_api_leaves_post",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveCreate"
+}
+}
+}
+},
+"responses": {
+"201": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/leaves/{leave_id}": {
+"get": {
+"tags": [
+"Leaves"
+],
+"summary": "Get Leave",
+"operationId": "get_leave_api_leaves__leave_id__get",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "leave_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Leave Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/leaves/{leave_id}/status": {
+"patch": {
+"tags": [
+"Leaves"
+],
+"summary": "Update Status",
+"operationId": "update_status_api_leaves__leave_id__status_patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "leave_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Leave Id"
+}
+}
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveStatusUpdate"
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/leaves/{leave_id}/cancel": {
+"patch": {
+"tags": [
+"Leaves"
+],
+"summary": "Cancel Leave",
+"operationId": "cancel_leave_api_leaves__leave_id__cancel_patch",
+"security": [
+{
+"HTTPBearer": []
+}
+],
+"parameters": [
+{
+"name": "leave_id",
+"in": "path",
+"required": true,
+"schema": {
+"type": "integer",
+"title": "Leave Id"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/LeaveOut"
+}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/api/dashboard": {
+"get": {
+"tags": [
+"Dashboard"
+],
+"summary": "Get Dashboard",
+"operationId": "get_dashboard_api_dashboard_get",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/DashboardStats"
+}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/telegram/set-webhook": {
+"post": {
+"tags": [
+"Telegram"
+],
+"summary": "Setup Webhook",
+"operationId": "setup_webhook_api_telegram_set_webhook_post",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/telegram/delete-webhook": {
+"post": {
+"tags": [
+"Telegram"
+],
+"summary": "Remove Webhook",
+"operationId": "remove_webhook_api_telegram_delete_webhook_post",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+}
+},
+"security": [
+{
+"HTTPBearer": []
+}
+]
+}
+},
+"/api/telegram/webhook": {
+"post": {
+"tags": [
+"Telegram"
+],
+"summary": "Telegram Webhook",
+"operationId": "telegram_webhook_api_telegram_webhook_post",
+"parameters": [
+{
+"name": "x-telegram-bot-api-secret-token",
+"in": "header",
+"required": false,
+"schema": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "X-Telegram-Bot-Api-Secret-Token"
+}
+}
+],
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+},
+"422": {
+"description": "Validation Error",
+"content": {
+"application/json": {
+"schema": {
+"$ref": "#/components/schemas/HTTPValidationError"
+}
+}
+}
+}
+}
+}
+},
+"/health": {
+"get": {
+"tags": [
+"Health"
+],
+"summary": "Health Check",
+"operationId": "health_check_health_get",
+"responses": {
+"200": {
+"description": "Successful Response",
+"content": {
+"application/json": {
+"schema": {}
+}
+}
+}
+}
+}
+}
+},
+"components": {
+"schemas": {
+"AttendanceCreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"date": {
+"type": "string",
+"format": "date",
+"title": "Date"
+},
+"check_in_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Time"
+},
+"check_out_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Time"
+},
+"check_in_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Photo"
+},
+"check_out_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Photo"
+},
+"check_in_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Location"
+},
+"check_out_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Location"
+},
+"status": {
+"$ref": "#/components/schemas/AttendanceStatus",
+"default": "present"
+},
+"late_minutes": {
+"type": "integer",
+"title": "Late Minutes",
+"default": 0
+},
+"source": {
+"$ref": "#/components/schemas/AttendanceSource",
+"default": "manual"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"date"
+],
+"title": "AttendanceCreate"
+},
+"AttendanceOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"date": {
+"type": "string",
+"format": "date",
+"title": "Date"
+},
+"check_in_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Time"
+},
+"check_out_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Time"
+},
+"check_in_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Photo"
+},
+"check_out_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Photo"
+},
+"check_in_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Location"
+},
+"check_out_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Location"
+},
+"status": {
+"$ref": "#/components/schemas/AttendanceStatus"
+},
+"late_minutes": {
+"type": "integer",
+"title": "Late Minutes"
+},
+"source": {
+"$ref": "#/components/schemas/AttendanceSource"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"date",
+"check_in_time",
+"check_out_time",
+"check_in_photo",
+"check_out_photo",
+"check_in_location",
+"check_out_location",
+"status",
+"late_minutes",
+"source",
+"notes"
+],
+"title": "AttendanceOut"
+},
+"AttendanceSource": {
+"type": "string",
+"enum": [
+"telegram",
+"manual"
+],
+"title": "AttendanceSource"
+},
+"AttendanceStatus": {
+"type": "string",
+"enum": [
+"present",
+"absent",
+"late",
+"half_day",
+"holiday"
+],
+"title": "AttendanceStatus"
+},
+"AttendanceSummary": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"total_days": {
+"type": "integer",
+"title": "Total Days"
+},
+"present": {
+"type": "integer",
+"title": "Present"
+},
+"absent": {
+"type": "integer",
+"title": "Absent"
+},
+"late": {
+"type": "integer",
+"title": "Late"
+},
+"half_day": {
+"type": "integer",
+"title": "Half Day"
+},
+"holiday": {
+"type": "integer",
+"title": "Holiday"
+},
+"total_late_minutes": {
+"type": "integer",
+"title": "Total Late Minutes"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"total_days",
+"present",
+"absent",
+"late",
+"half_day",
+"holiday",
+"total_late_minutes"
+],
+"title": "AttendanceSummary",
+"description": "Oylik yoki haftalik statistika"
+},
+"AttendanceUpdate": {
+"properties": {
+"check_in_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Time"
+},
+"check_out_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Time"
+},
+"check_in_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Photo"
+},
+"check_out_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Photo"
+},
+"check_in_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Location"
+},
+"check_out_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Location"
+},
+"status": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/AttendanceStatus"
+},
+{
+"type": "null"
+}
+]
+},
+"late_minutes": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Late Minutes"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"title": "AttendanceUpdate"
+},
+"BonusCreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"amount": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "string"
+}
+],
+"title": "Amount"
+},
+"reason": {
+"type": "string",
+"title": "Reason"
+},
+"bonus_type": {
+"$ref": "#/components/schemas/BonusType",
+"default": "extra"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"amount",
+"reason",
+"period_year",
+"period_month"
+],
+"title": "BonusCreate"
+},
+"BonusOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"amount": {
+"type": "string",
+"title": "Amount"
+},
+"reason": {
+"type": "string",
+"title": "Reason"
+},
+"bonus_type": {
+"$ref": "#/components/schemas/BonusType"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"approved_by_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Approved By Id"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"amount",
+"reason",
+"bonus_type",
+"period_year",
+"period_month",
+"approved_by_id"
+],
+"title": "BonusOut"
+},
+"BonusType": {
+"type": "string",
+"enum": [
+"performance",
+"holiday",
+"extra"
+],
+"title": "BonusType"
+},
+"BranchCreate": {
+"properties": {
+"name": {
+"type": "string",
+"title": "Name"
+},
+"address": {
+"type": "string",
+"title": "Address"
+},
+"phone": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Phone"
+},
+"manager_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Manager Id"
+},
+"work_start_time": {
+"type": "string",
+"format": "time",
+"title": "Work Start Time",
+"default": "09:00:00"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active",
+"default": true
+}
+},
+"type": "object",
+"required": [
+"name",
+"address"
+],
+"title": "BranchCreate"
+},
+"BranchOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"name": {
+"type": "string",
+"title": "Name"
+},
+"address": {
+"type": "string",
+"title": "Address"
+},
+"phone": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Phone"
+},
+"manager_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Manager Id"
+},
+"work_start_time": {
+"type": "string",
+"format": "time",
+"title": "Work Start Time"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"name",
+"address",
+"phone",
+"manager_id",
+"work_start_time",
+"is_active"
+],
+"title": "BranchOut"
+},
+"BranchShort": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"name": {
+"type": "string",
+"title": "Name"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"name",
+"is_active"
+],
+"title": "BranchShort"
+},
+"BranchUpdate": {
+"properties": {
+"name": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Name"
+},
+"address": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Address"
+},
+"phone": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Phone"
+},
+"manager_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Manager Id"
+},
+"work_start_time": {
+"anyOf": [
+{
+"type": "string",
+"format": "time"
+},
+{
+"type": "null"
+}
+],
+"title": "Work Start Time"
+},
+"is_active": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+"type": "object",
+"title": "BranchUpdate"
+},
+"ChangePasswordSchema": {
+"properties": {
+"old_password": {
+"type": "string",
+"title": "Old Password"
+},
+"new_password": {
+"type": "string",
+"title": "New Password"
+}
+},
+"type": "object",
+"required": [
+"old_password",
+"new_password"
+],
+"title": "ChangePasswordSchema"
+},
+"CheckInRequest": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"check_in_time": {
+"type": "string",
+"format": "time",
+"title": "Check In Time"
+},
+"check_in_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Photo"
+},
+"check_in_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check In Location"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"check_in_time"
+],
+"title": "CheckInRequest",
+"description": "Telegram bot orqali check-in"
+},
+"CheckOutRequest": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"check_out_time": {
+"type": "string",
+"format": "time",
+"title": "Check Out Time"
+},
+"check_out_photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Photo"
+},
+"check_out_location": {
+"anyOf": [
+{
+"type": "object"
+},
+{
+"type": "null"
+}
+],
+"title": "Check Out Location"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"check_out_time"
+],
+"title": "CheckOutRequest",
+"description": "Telegram bot orqali check-out"
+},
+"DashboardStats": {
+"properties": {
+"total_employees": {
+"type": "integer",
+"title": "Total Employees"
+},
+"active_employees": {
+"type": "integer",
+"title": "Active Employees"
+},
+"today_present": {
+"type": "integer",
+"title": "Today Present"
+},
+"today_absent": {
+"type": "integer",
+"title": "Today Absent"
+},
+"today_late": {
+"type": "integer",
+"title": "Today Late"
+},
+"pending_leaves": {
+"type": "integer",
+"title": "Pending Leaves"
+},
+"draft_salaries": {
+"type": "integer",
+"title": "Draft Salaries"
+},
+"paid_salaries_this_month": {
+"type": "integer",
+"title": "Paid Salaries This Month"
+}
+},
+"type": "object",
+"required": [
+"total_employees",
+"active_employees",
+"today_present",
+"today_absent",
+"today_late",
+"pending_leaves",
+"draft_salaries",
+"paid_salaries_this_month"
+],
+"title": "DashboardStats"
+},
+"DeductionCreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"amount": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "string"
+}
+],
+"title": "Amount"
+},
+"reason": {
+"type": "string",
+"title": "Reason"
+},
+"deduction_type": {
+"$ref": "#/components/schemas/DeductionType",
+"default": "other"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"amount",
+"reason",
+"period_year",
+"period_month"
+],
+"title": "DeductionCreate"
+},
+"DeductionOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"amount": {
+"type": "string",
+"title": "Amount"
+},
+"reason": {
+"type": "string",
+"title": "Reason"
+},
+"deduction_type": {
+"$ref": "#/components/schemas/DeductionType"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"auto_generated": {
+"type": "boolean",
+"title": "Auto Generated"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"amount",
+"reason",
+"deduction_type",
+"period_year",
+"period_month",
+"auto_generated"
+],
+"title": "DeductionOut"
+},
+"DeductionType": {
+"type": "string",
+"enum": [
+"late",
+"absence",
+"damage",
+"other"
+],
+"title": "DeductionType"
+},
+"DepartmentCreate": {
+"properties": {
+"name": {
+"type": "string",
+"title": "Name"
+},
+"branch_id": {
+"type": "integer",
+"title": "Branch Id"
+},
+"head_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Head Id"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active",
+"default": true
+}
+},
+"type": "object",
+"required": [
+"name",
+"branch_id"
+],
+"title": "DepartmentCreate"
+},
+"DepartmentOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"name": {
+"type": "string",
+"title": "Name"
+},
+"branch_id": {
+"type": "integer",
+"title": "Branch Id"
+},
+"head_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Head Id"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"name",
+"branch_id",
+"head_id",
+"is_active"
+],
+"title": "DepartmentOut"
+},
+"DepartmentShort": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"name": {
+"type": "string",
+"title": "Name"
+},
+"branch_id": {
+"type": "integer",
+"title": "Branch Id"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"name",
+"branch_id",
+"is_active"
+],
+"title": "DepartmentShort"
+},
+"DepartmentUpdate": {
+"properties": {
+"name": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Name"
+},
+"branch_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+},
+"head_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Head Id"
+},
+"is_active": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+"type": "object",
+"title": "DepartmentUpdate"
+},
+"EmployeeCreate": {
+"properties": {
+"phone": {
+"type": "string",
+"title": "Phone"
+},
+"full_name": {
+"type": "string",
+"title": "Full Name"
+},
+"password": {
+"type": "string",
+"title": "Password"
+},
+"role": {
+"$ref": "#/components/schemas/UserRole",
+"default": "employee"
+},
+"branch_id": {
+"type": "integer",
+"title": "Branch Id"
+},
+"department_id": {
+"type": "integer",
+"title": "Department Id"
+},
+"position": {
+"type": "string",
+"title": "Position"
+},
+"employment_type": {
+"$ref": "#/components/schemas/EmploymentType",
+"default": "full"
+},
+"hire_date": {
+"type": "string",
+"format": "date",
+"title": "Hire Date"
+},
+"base_salary": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "string"
+}
+],
+"title": "Base Salary"
+},
+"telegram_user_id": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Telegram User Id"
+},
+"photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Photo"
+}
+},
+"type": "object",
+"required": [
+"phone",
+"full_name",
+"password",
+"branch_id",
+"department_id",
+"position",
+"hire_date",
+"base_salary"
+],
+"title": "EmployeeCreate"
+},
+"EmployeeDetail": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"user_id": {
+"type": "integer",
+"title": "User Id"
+},
+"full_name": {
+"type": "string",
+"title": "Full Name"
+},
+"phone": {
+"type": "string",
+"title": "Phone"
+},
+"role": {
+"$ref": "#/components/schemas/UserRole"
+},
+"branch_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+},
+"department_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+},
+"position": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Position"
+},
+"employment_type": {
+"$ref": "#/components/schemas/EmploymentType"
+},
+"hire_date": {
+"anyOf": [
+{
+"type": "string",
+"format": "date"
+},
+{
+"type": "null"
+}
+],
+"title": "Hire Date"
+},
+"base_salary": {
+"type": "string",
+"title": "Base Salary"
+},
+"telegram_user_id": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Telegram User Id"
+},
+"photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Photo"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+},
+"branch": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/BranchShort"
+},
+{
+"type": "null"
+}
+]
+},
+"department": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/DepartmentShort"
+},
+{
+"type": "null"
+}
+]
+}
+},
+"type": "object",
+"required": [
+"id",
+"user_id",
+"full_name",
+"phone",
+"role",
+"employment_type",
+"base_salary",
+"is_active"
+],
+"title": "EmployeeDetail"
+},
+"EmployeeOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"user_id": {
+"type": "integer",
+"title": "User Id"
+},
+"full_name": {
+"type": "string",
+"title": "Full Name"
+},
+"phone": {
+"type": "string",
+"title": "Phone"
+},
+"role": {
+"$ref": "#/components/schemas/UserRole"
+},
+"branch_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+},
+"department_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+},
+"position": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Position"
+},
+"employment_type": {
+"$ref": "#/components/schemas/EmploymentType"
+},
+"hire_date": {
+"anyOf": [
+{
+"type": "string",
+"format": "date"
+},
+{
+"type": "null"
+}
+],
+"title": "Hire Date"
+},
+"base_salary": {
+"type": "string",
+"title": "Base Salary"
+},
+"telegram_user_id": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Telegram User Id"
+},
+"photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Photo"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"user_id",
+"full_name",
+"phone",
+"role",
+"employment_type",
+"base_salary",
+"is_active"
+],
+"title": "EmployeeOut"
+},
+"EmployeeUpdate": {
+"properties": {
+"branch_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Branch Id"
+},
+"department_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+},
+"position": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Position"
+},
+"employment_type": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/EmploymentType"
+},
+{
+"type": "null"
+}
+]
+},
+"hire_date": {
+"anyOf": [
+{
+"type": "string",
+"format": "date"
+},
+{
+"type": "null"
+}
+],
+"title": "Hire Date"
+},
+"base_salary": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Base Salary"
+},
+"telegram_user_id": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Telegram User Id"
+},
+"photo": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Photo"
+},
+"is_active": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+},
+"full_name": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Full Name"
+},
+"role": {
+"anyOf": [
+{
+"$ref": "#/components/schemas/UserRole"
+},
+{
+"type": "null"
+}
+]
+}
+},
+"type": "object",
+"title": "EmployeeUpdate"
+},
+"EmploymentType": {
+"type": "string",
+"enum": [
+"full",
+"part",
+"contract"
+],
+"title": "EmploymentType"
+},
+"HTTPValidationError": {
+"properties": {
+"detail": {
+"items": {
+"$ref": "#/components/schemas/ValidationError"
+},
+"type": "array",
+"title": "Detail"
+}
+},
+"type": "object",
+"title": "HTTPValidationError"
+},
+"KPICreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"metric_name": {
+"type": "string",
+"title": "Metric Name"
+},
+"target_value": {
+"type": "number",
+"title": "Target Value"
+},
+"actual_value": {
+"type": "number",
+"title": "Actual Value",
+"default": 0
+},
+"weight": {
+"type": "number",
+"title": "Weight",
+"default": 100
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"period_year",
+"period_month",
+"metric_name",
+"target_value"
+],
+"title": "KPICreate"
+},
+"KPIOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"metric_name": {
+"type": "string",
+"title": "Metric Name"
+},
+"target_value": {
+"type": "number",
+"title": "Target Value"
+},
+"actual_value": {
+"type": "number",
+"title": "Actual Value"
+},
+"weight": {
+"type": "number",
+"title": "Weight"
+},
+"score": {
+"type": "number",
+"title": "Score"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"period_year",
+"period_month",
+"metric_name",
+"target_value",
+"actual_value",
+"weight",
+"score",
+"notes"
+],
+"title": "KPIOut"
+},
+"KPISummary": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"total_score": {
+"type": "number",
+"title": "Total Score"
+},
+"max_score": {
+"type": "number",
+"title": "Max Score"
+},
+"percentage": {
+"type": "number",
+"title": "Percentage"
+},
+"kpi_count": {
+"type": "integer",
+"title": "Kpi Count"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"period_year",
+"period_month",
+"total_score",
+"max_score",
+"percentage",
+"kpi_count"
+],
+"title": "KPISummary"
+},
+"KPITemplateCreate": {
+"properties": {
+"department_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+},
+"metric_name": {
+"type": "string",
+"title": "Metric Name"
+},
+"description": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Description"
+},
+"target_value": {
+"type": "number",
+"title": "Target Value"
+},
+"weight": {
+"type": "number",
+"title": "Weight",
+"default": 100
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active",
+"default": true
+}
+},
+"type": "object",
+"required": [
+"metric_name",
+"target_value"
+],
+"title": "KPITemplateCreate"
+},
+"KPITemplateOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"department_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Department Id"
+},
+"metric_name": {
+"type": "string",
+"title": "Metric Name"
+},
+"description": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Description"
+},
+"target_value": {
+"type": "number",
+"title": "Target Value"
+},
+"weight": {
+"type": "number",
+"title": "Weight"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+}
+},
+"type": "object",
+"required": [
+"id",
+"department_id",
+"metric_name",
+"description",
+"target_value",
+"weight",
+"is_active"
+],
+"title": "KPITemplateOut"
+},
+"KPITemplateUpdate": {
+"properties": {
+"metric_name": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Metric Name"
+},
+"description": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Description"
+},
+"target_value": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "null"
+}
+],
+"title": "Target Value"
+},
+"weight": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "null"
+}
+],
+"title": "Weight"
+},
+"is_active": {
+"anyOf": [
+{
+"type": "boolean"
+},
+{
+"type": "null"
+}
+],
+"title": "Is Active"
+}
+},
+"type": "object",
+"title": "KPITemplateUpdate"
+},
+"KPIUpdate": {
+"properties": {
+"actual_value": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "null"
+}
+],
+"title": "Actual Value"
+},
+"target_value": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "null"
+}
+],
+"title": "Target Value"
+},
+"weight": {
+"anyOf": [
+{
+"type": "number"
+},
+{
+"type": "null"
+}
+],
+"title": "Weight"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"title": "KPIUpdate"
+},
+"LeaveCreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"leave_type": {
+"$ref": "#/components/schemas/LeaveType",
+"default": "annual"
+},
+"start_date": {
+"type": "string",
+"format": "date",
+"title": "Start Date"
+},
+"end_date": {
+"type": "string",
+"format": "date",
+"title": "End Date"
+},
+"reason": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Reason"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"start_date",
+"end_date"
+],
+"title": "LeaveCreate"
+},
+"LeaveOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"leave_type": {
+"$ref": "#/components/schemas/LeaveType"
+},
+"start_date": {
+"type": "string",
+"format": "date",
+"title": "Start Date"
+},
+"end_date": {
+"type": "string",
+"format": "date",
+"title": "End Date"
+},
+"days_count": {
+"type": "integer",
+"title": "Days Count"
+},
+"reason": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Reason"
+},
+"status": {
+"$ref": "#/components/schemas/LeaveStatus"
+},
+"approved_by_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Approved By Id"
+},
+"rejection_reason": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Rejection Reason"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"leave_type",
+"start_date",
+"end_date",
+"days_count",
+"reason",
+"status",
+"approved_by_id",
+"rejection_reason"
+],
+"title": "LeaveOut"
+},
+"LeaveStatus": {
+"type": "string",
+"enum": [
+"pending",
+"approved",
+"rejected",
+"cancelled"
+],
+"title": "LeaveStatus"
+},
+"LeaveStatusUpdate": {
+"properties": {
+"status": {
+"$ref": "#/components/schemas/LeaveStatus"
+},
+"rejection_reason": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Rejection Reason"
+}
+},
+"type": "object",
+"required": [
+"status"
+],
+"title": "LeaveStatusUpdate"
+},
+"LeaveType": {
+"type": "string",
+"enum": [
+"annual",
+"sick",
+"unpaid",
+"maternity",
+"other"
+],
+"title": "LeaveType"
+},
+"LoginSchema": {
+"properties": {
+"phone": {
+"type": "string",
+"title": "Phone"
+},
+"password": {
+"type": "string",
+"title": "Password"
+}
+},
+"type": "object",
+"required": [
+"phone",
+"password"
+],
+"title": "LoginSchema"
+},
+"PaginatedAttendance": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/AttendanceOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedAttendance"
+},
+"PaginatedBonuses": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/BonusOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedBonuses"
+},
+"PaginatedBranches": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/BranchOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedBranches"
+},
+"PaginatedDeductions": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/DeductionOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedDeductions"
+},
+"PaginatedDepartments": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/DepartmentOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedDepartments"
+},
+"PaginatedEmployees": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/EmployeeDetail"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedEmployees"
+},
+"PaginatedKPI": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/KPIOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedKPI"
+},
+"PaginatedLeaves": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/LeaveOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedLeaves"
+},
+"PaginatedSalaryRecords": {
+"properties": {
+"total": {
+"type": "integer",
+"title": "Total"
+},
+"page": {
+"type": "integer",
+"title": "Page"
+},
+"size": {
+"type": "integer",
+"title": "Size"
+},
+"items": {
+"items": {
+"$ref": "#/components/schemas/SalaryRecordOut"
+},
+"type": "array",
+"title": "Items"
+}
+},
+"type": "object",
+"required": [
+"total",
+"page",
+"size",
+"items"
+],
+"title": "PaginatedSalaryRecords"
+},
+"RefreshSchema": {
+"properties": {
+"refresh_token": {
+"type": "string",
+"title": "Refresh Token"
+}
+},
+"type": "object",
+"required": [
+"refresh_token"
+],
+"title": "RefreshSchema"
+},
+"SalaryRecordCreate": {
+"properties": {
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"employee_id",
+"period_year",
+"period_month"
+],
+"title": "SalaryRecordCreate"
+},
+"SalaryRecordOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"employee_id": {
+"type": "integer",
+"title": "Employee Id"
+},
+"period_year": {
+"type": "integer",
+"title": "Period Year"
+},
+"period_month": {
+"type": "integer",
+"title": "Period Month"
+},
+"base_salary": {
+"type": "string",
+"title": "Base Salary"
+},
+"total_bonus": {
+"type": "string",
+"title": "Total Bonus"
+},
+"total_deduction": {
+"type": "string",
+"title": "Total Deduction"
+},
+"late_deduction": {
+"type": "string",
+"title": "Late Deduction"
+},
+"leave_deduction": {
+"type": "string",
+"title": "Leave Deduction"
+},
+"net_salary": {
+"type": "string",
+"title": "Net Salary"
+},
+"status": {
+"$ref": "#/components/schemas/SalaryStatus"
+},
+"paid_at": {
+"anyOf": [
+{
+"type": "string",
+"format": "date-time"
+},
+{
+"type": "null"
+}
+],
+"title": "Paid At"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"id",
+"employee_id",
+"period_year",
+"period_month",
+"base_salary",
+"total_bonus",
+"total_deduction",
+"late_deduction",
+"leave_deduction",
+"net_salary",
+"status",
+"paid_at",
+"notes"
+],
+"title": "SalaryRecordOut"
+},
+"SalaryStatus": {
+"type": "string",
+"enum": [
+"draft",
+"approved",
+"paid"
+],
+"title": "SalaryStatus"
+},
+"SalaryStatusUpdate": {
+"properties": {
+"status": {
+"$ref": "#/components/schemas/SalaryStatus"
+},
+"notes": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "null"
+}
+],
+"title": "Notes"
+}
+},
+"type": "object",
+"required": [
+"status"
+],
+"title": "SalaryStatusUpdate"
+},
+"TokenResponse": {
+"properties": {
+"access_token": {
+"type": "string",
+"title": "Access Token"
+},
+"refresh_token": {
+"type": "string",
+"title": "Refresh Token"
+},
+"token_type": {
+"type": "string",
+"title": "Token Type",
+"default": "bearer"
+},
+"user": {
+"$ref": "#/components/schemas/UserOut"
+}
+},
+"type": "object",
+"required": [
+"access_token",
+"refresh_token",
+"user"
+],
+"title": "TokenResponse"
+},
+"UserOut": {
+"properties": {
+"id": {
+"type": "integer",
+"title": "Id"
+},
+"phone": {
+"type": "string",
+"title": "Phone"
+},
+"full_name": {
+"type": "string",
+"title": "Full Name"
+},
+"role": {
+"$ref": "#/components/schemas/UserRole"
+},
+"is_active": {
+"type": "boolean",
+"title": "Is Active"
+},
+"created_at": {
+"type": "string",
+"format": "date-time",
+"title": "Created At"
+},
+"employee_id": {
+"anyOf": [
+{
+"type": "integer"
+},
+{
+"type": "null"
+}
+],
+"title": "Employee Id"
+}
+},
+"type": "object",
+"required": [
+"id",
+"phone",
+"full_name",
+"role",
+"is_active",
+"created_at"
+],
+"title": "UserOut"
+},
+"UserRole": {
+"type": "string",
+"enum": [
+"superadmin",
+"admin",
+"hr_manager",
+"branch_manager",
+"accountant",
+"employee"
+],
+"title": "UserRole"
+},
+"ValidationError": {
+"properties": {
+"loc": {
+"items": {
+"anyOf": [
+{
+"type": "string"
+},
+{
+"type": "integer"
+}
+]
+},
+"type": "array",
+"title": "Location"
+},
+"msg": {
+"type": "string",
+"title": "Message"
+},
+"type": {
+"type": "string",
+"title": "Error Type"
+}
+},
+"type": "object",
+"required": [
+"loc",
+"msg",
+"type"
+],
+"title": "ValidationError"
+}
+},
+"securitySchemes": {
+"HTTPBearer": {
+"type": "http",
+"scheme": "bearer"
+}
+}
+}
+}

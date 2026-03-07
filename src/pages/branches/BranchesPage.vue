@@ -136,6 +136,7 @@ async function deleteBranch(branch: BranchOut) {
 </script>
 
 <template>
+  <div>
   <div class="space-y-6">
 
     <!-- Header -->
@@ -324,4 +325,5 @@ async function deleteBranch(branch: BranchOut) {
       </AppButton>
     </template>
   </AppModal>
+  </div>
 </template>

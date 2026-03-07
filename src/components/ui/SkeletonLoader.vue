@@ -78,13 +78,11 @@ withDefaults(defineProps<Props>(), {
   </template>
 
   <!-- Text lines skeleton -->
-  <template v-else-if="variant === 'text'">
-    <div class="animate-pulse space-y-2">
-      <div v-for="i in rows" :key="i"
-        :class="['h-4 bg-gray-200 dark:bg-gray-700 rounded', i === rows ? 'w-2/3' : 'w-full']"
-      />
-    </div>
-  </template>
+  <div v-else-if="variant === 'text'" class="animate-pulse space-y-2">
+    <div v-for="i in rows" :key="i"
+      :class="['h-4 bg-gray-200 dark:bg-gray-700 rounded', i === rows ? 'w-2/3' : 'w-full']"
+    />
+  </div>
 
   <!-- Circle skeleton -->
   <template v-else-if="variant === 'circle'">

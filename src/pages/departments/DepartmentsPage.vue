@@ -164,6 +164,7 @@ function getBranchName(branchId: number) {
 </script>
 
 <template>
+  <div>
   <div class="space-y-6">
 
     <!-- Header -->
@@ -320,4 +321,5 @@ function getBranchName(branchId: number) {
       </AppButton>
     </template>
   </AppModal>
+  </div>
 </template>

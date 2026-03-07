@@ -61,7 +61,7 @@ const routes: RouteRecordRaw[] = [
         path: 'attendance',
         name: 'attendance',
         component: () => import('@/pages/attendance/AttendancePage.vue'),
-        meta: { permission: 'attendance' },
+        meta: { permission: 'attendance.any' },
       },
       {
         path: 'salary',
@@ -79,7 +79,7 @@ const routes: RouteRecordRaw[] = [
         path: 'kpi',
         name: 'kpi',
         component: () => import('@/pages/kpi/KpiPage.vue'),
-        meta: { permission: 'kpi' },
+        meta: { permission: 'kpi.any' },
       },
       {
         path: 'leaves',
@@ -122,8 +122,13 @@ router.beforeEach(async (to) => {
 
   // Permission check — route da permission meta bo'lsa
   if (to.meta.permission) {
-    const { can } = usePermission()
-    if (!can.value(to.meta.permission as any)) {
+    const { can, canAny } = usePermission()
+    // attendance.any — employee ham kirishi mumkin
+    if (to.meta.permission === 'attendance.any') {
+      if (!canAny.value('attendance', 'attendance.own')) return { name: 'forbidden' }
+    } else if (to.meta.permission === 'kpi.any') {
+      if (!canAny.value('kpi', 'kpi.own')) return { name: 'forbidden' }
+    } else if (!can.value(to.meta.permission as any)) {
       return { name: 'forbidden' }
     }
   }
