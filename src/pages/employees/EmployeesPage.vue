@@ -15,11 +15,11 @@ import { formatMoney } from '@/utils/format'
 import type { BranchOut, DepartmentOut, EmployeeCreate, UserRole, EmploymentType } from '@/types'
 import api from '@/composables/useApi'
 
-const store         = useEmployeeStore()
-const toast         = useToastStore()
-const router        = useRouter()
-const { confirm }   = useConfirm()
-const { can }       = usePermission()
+const store       = useEmployeeStore()
+const toast       = useToastStore()
+const router      = useRouter()
+const { confirm } = useConfirm()
+const { can }     = usePermission()
 
 const branches    = ref<BranchOut[]>([])
 const departments = ref<DepartmentOut[]>([])
@@ -40,13 +40,13 @@ function onSearch(val: string) {
 }
 
 const columns: TableColumn[] = [
-  { key: 'full_name',     label: 'F.I.O',     sortable: true, mobileTitle: true },
-  { key: 'branch',        label: 'Filial' },
-  { key: 'department',    label: "Bo'lim" },
-  { key: 'position',      label: 'Lavozim' },
-  { key: 'base_salary',   label: 'Maosh',     sortable: true },
-  { key: 'is_active',     label: 'Status' },
-  { key: 'actions',       label: 'Amallar',   mobileHide: true, width: '120px' },
+  { key: 'full_name',   label: 'F.I.O',   sortable: true, mobileTitle: true },
+  { key: 'branch',      label: 'Filial' },
+  { key: 'department',  label: "Bo'lim" },
+  { key: 'position',    label: 'Lavozim' },
+  { key: 'base_salary', label: 'Maosh',   sortable: true },
+  { key: 'is_active',   label: 'Status' },
+  { key: 'actions',     label: 'Amallar', mobileHide: true, width: '120px' },
 ]
 
 const totalPages = computed(() => Math.ceil(store.total / store.size))
@@ -54,15 +54,16 @@ const totalPages = computed(() => Math.ceil(store.total / store.size))
 const showAdd    = ref(false)
 const addLoading = ref(false)
 
+// ✅ EmployeeCreate da required fieldlar: branch_id, department_id, position, hire_date, base_salary
 const emptyForm = (): EmployeeCreate => ({
   phone:            '',
   full_name:        '',
   password:         '',
   role:             'employee',
-  branch_id:        undefined,
-  department_id:    undefined,
+  branch_id:        0,
+  department_id:    0,
   position:         '',
-  employment_type:  'full_time',
+  employment_type:  'full',     // ✅ 'full_time' → 'full'
   hire_date:        '',
   base_salary:      0,
   telegram_user_id: '',
@@ -74,9 +75,14 @@ const fErrors = ref<Partial<Record<keyof EmployeeCreate, string>>>({})
 function validateForm() {
   fErrors.value = {}
   let ok = true
-  if (!form.value.phone)     { fErrors.value.phone     = 'Telefon kiritilishi shart'; ok = false }
-  if (!form.value.full_name) { fErrors.value.full_name = 'F.I.O kiritilishi shart';   ok = false }
-  if (!form.value.password)  { fErrors.value.password  = 'Parol kiritilishi shart';   ok = false }
+  if (!form.value.phone)        { fErrors.value.phone        = 'Telefon kiritilishi shart'; ok = false }
+  if (!form.value.full_name)    { fErrors.value.full_name    = 'F.I.O kiritilishi shart';   ok = false }
+  if (!form.value.password)     { fErrors.value.password     = 'Parol kiritilishi shart';   ok = false }
+  if (!form.value.branch_id)    { fErrors.value.branch_id    = 'Filial tanlanishi shart';   ok = false }
+  if (!form.value.department_id){ fErrors.value.department_id= "Bo'lim tanlanishi shart";   ok = false }
+  if (!form.value.position)     { fErrors.value.position     = 'Lavozim kiritilishi shart'; ok = false }
+  if (!form.value.hire_date)    { fErrors.value.hire_date    = 'Sana kiritilishi shart';    ok = false }
+  if (!form.value.base_salary)  { fErrors.value.base_salary  = 'Maosh kiritilishi shart';   ok = false }
   return ok
 }
 
@@ -84,17 +90,27 @@ async function onAdd() {
   if (!validateForm()) return
   addLoading.value = true
   try {
-    const payload = { ...form.value }
-    if (!payload.branch_id)        delete payload.branch_id
-    if (!payload.department_id)    delete payload.department_id
-    if (!payload.hire_date)        delete payload.hire_date
-    if (!payload.telegram_user_id) delete payload.telegram_user_id
+    const payload: EmployeeCreate = {
+      phone:            form.value.phone,
+      full_name:        form.value.full_name,
+      password:         form.value.password,
+      role:             form.value.role,
+      branch_id:        form.value.branch_id,
+      department_id:    form.value.department_id,
+      position:         form.value.position,
+      employment_type:  form.value.employment_type,
+      hire_date:        form.value.hire_date,
+      base_salary:      form.value.base_salary,
+    }
+    // ✅ optional fieldlar faqat qiymat bo'lsa qo'shiladi
+    if (form.value.telegram_user_id) payload.telegram_user_id = form.value.telegram_user_id
     await store.create(payload)
     toast.success("Xodim qo'shildi")
     showAdd.value = false
     form.value    = emptyForm()
-  } catch (_) {
-    toast.error("Xodim qo'shishda xatolik")
+  } catch {
+    // interceptor allaqachon backend xabarini toast da ko'rsatadi
+    // 400: "Bu phone raqam allaqachon mavjud" kabi xabarlar shu yerga yetib kelmaydi
   } finally {
     addLoading.value = false
   }
@@ -117,21 +133,22 @@ async function onDelete(id: number, name: string) {
 
 const roles: { value: UserRole; label: string }[] = [
   { value: 'employee',       label: 'Xodim'         },
-  { value: 'hr_manager',     label: 'HR Menejer'     },
+  { value: 'hr_manager',     label: 'HR Menejer'    },
   { value: 'branch_manager', label: 'Filial Menejer' },
-  { value: 'accountant',     label: 'Buxgalter'      },
-  { value: 'admin',          label: 'Admin'          },
+  { value: 'accountant',     label: 'Buxgalter'     },
+  { value: 'admin',          label: 'Admin'         },
 ]
 
+// ✅ backend enum: 'full' | 'part' | 'contract'
 const employmentTypes: { value: EmploymentType; label: string }[] = [
-  { value: 'full_time', label: "To'liq stavka" },
-  { value: 'part_time', label: 'Yarim stavka'  },
-  { value: 'contract',  label: 'Kontrakt'      },
-  { value: 'intern',    label: 'Intern'        },
+  { value: 'full',     label: "To'liq stavka" },
+  { value: 'part',     label: 'Yarim stavka'  },
+  { value: 'contract', label: 'Kontrakt'      },
 ]
 
-onMounted(async () => {
-  await Promise.all([store.fetchAll(), loadMeta()])
+onMounted(() => {
+  store.fetchAll()
+  loadMeta()
 })
 </script>
 
@@ -320,6 +337,7 @@ onMounted(async () => {
           v-model="form.phone"
           label="Telefon"
           type="tel"
+          placeholder="+998901234567"
           required
           :hint="fErrors.phone"
           :state="fErrors.phone ? 'error' : 'default'"
@@ -332,7 +350,13 @@ onMounted(async () => {
           :hint="fErrors.password"
           :state="fErrors.password ? 'error' : 'default'"
         />
-        <AppInput v-model="form.position" label="Lavozim" />
+        <AppInput
+          v-model="form.position"
+          label="Lavozim"
+          required
+          :hint="fErrors.position"
+          :state="fErrors.position ? 'error' : 'default'"
+        />
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rol</label>
@@ -351,39 +375,55 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Filial</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Filial <span class="text-red-400">*</span>
+          </label>
           <select v-model="form.branch_id"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
-            <option :value="undefined">Tanlang</option>
+            :class="['w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500',
+              fErrors.branch_id ? 'border-red-400' : 'border-gray-200 dark:border-gray-700']">
+            <option :value="0" disabled>Tanlang</option>
             <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
           </select>
+          <p v-if="fErrors.branch_id" class="text-xs text-red-400 mt-1">{{ fErrors.branch_id }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bo'lim</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Bo'lim <span class="text-red-400">*</span>
+          </label>
           <select v-model="form.department_id"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
-            <option :value="undefined">Tanlang</option>
+            :class="['w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500',
+              fErrors.department_id ? 'border-red-400' : 'border-gray-200 dark:border-gray-700']">
+            <option :value="0" disabled>Tanlang</option>
             <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
           </select>
+          <p v-if="fErrors.department_id" class="text-xs text-red-400 mt-1">{{ fErrors.department_id }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Asosiy maosh</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Asosiy maosh <span class="text-red-400">*</span>
+          </label>
           <input
             :value="form.base_salary"
             type="number"
             min="0"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500"
+            :class="['w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500',
+              fErrors.base_salary ? 'border-red-400' : 'border-gray-200 dark:border-gray-700']"
             @input="form.base_salary = Number(($event.target as HTMLInputElement).value)"
           />
+          <p v-if="fErrors.base_salary" class="text-xs text-red-400 mt-1">{{ fErrors.base_salary }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ishga kirgan sana</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Ishga kirgan sana <span class="text-red-400">*</span>
+          </label>
           <input v-model="form.hire_date" type="date"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500"
+            :class="['w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500',
+              fErrors.hire_date ? 'border-red-400' : 'border-gray-200 dark:border-gray-700']"
           />
+          <p v-if="fErrors.hire_date" class="text-xs text-red-400 mt-1">{{ fErrors.hire_date }}</p>
         </div>
 
         <AppInput
@@ -395,7 +435,7 @@ onMounted(async () => {
 
       <template #footer>
         <div class="flex gap-2 justify-end">
-          <AppButton variant="ghost" @click="showAdd = false">Bekor qilish</AppButton>
+          <AppButton variant="ghost" @click="showAdd = false; form = emptyForm(); fErrors = {}">Bekor qilish</AppButton>
           <AppButton variant="primary" :loading="addLoading" @click="onAdd">Saqlash</AppButton>
         </div>
       </template>

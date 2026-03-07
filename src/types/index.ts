@@ -8,7 +8,7 @@ export type UserRole =
   | 'accountant'
   | 'employee'
 
-export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'intern'
+export type EmploymentType = 'full' | 'part' | 'contract'
 
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day'
 export type AttendanceSource = 'manual' | 'telegram' | 'system'
@@ -37,9 +37,11 @@ export interface TokenResponse {
 export interface UserOut {
   id: number
   phone: string
+  full_name: string
   role: UserRole
   is_active: boolean
   created_at: string
+  employee_id: number | null
 }
 
 export interface ChangePasswordSchema {
@@ -53,26 +55,35 @@ export interface BranchOut {
   id: number
   name: string
   address: string | null
+  phone: string | null
+  manager_id: number | null
   work_start_time: string | null
+  is_active: boolean
   employee_count?: number
-  created_at: string
 }
 
 export interface BranchShort {
   id: number
   name: string
+  is_active: boolean
 }
 
 export interface BranchCreate {
   name: string
   address?: string | null
+  phone?: string | null
+  manager_id?: number | null
   work_start_time?: string | null
+  is_active: boolean
 }
 
 export interface BranchUpdate {
   name?: string
   address?: string | null
+  phone?: string | null
+  manager_id?: number | null
   work_start_time?: string | null
+  is_active?: boolean
 }
 
 // ─── Department ──────────────────────────────────────────────────────────────
@@ -81,31 +92,38 @@ export interface DepartmentOut {
   id: number
   name: string
   branch_id: number
+  head_id: number | null
+  is_active: boolean
   branch?: BranchShort
   employee_count?: number
-  created_at: string
 }
 
 export interface DepartmentShort {
   id: number
   name: string
   branch_id: number
+  is_active: boolean
 }
 
 export interface DepartmentCreate {
   name: string
   branch_id: number
+  head_id?: number | null
+  is_active?: boolean
 }
 
 export interface DepartmentUpdate {
-  name?: string
-  branch_id?: number
+  name?: string | null
+  branch_id?: number | null
+  head_id?: number | null
+  is_active?: boolean | null
 }
 
 // ─── Employee ────────────────────────────────────────────────────────────────
 
 export interface EmployeeOut {
   id: number
+  user_id: number
   full_name: string
   phone: string
   role: UserRole
@@ -116,10 +134,10 @@ export interface EmployeeOut {
   position: string | null
   employment_type: EmploymentType
   hire_date: string | null
-  base_salary: number
+  base_salary: string        // Decimal → string
   telegram_user_id: string | null
+  photo: string | null
   is_active: boolean
-  created_at: string
 }
 
 export interface EmployeeDetail extends EmployeeOut {
@@ -141,17 +159,17 @@ export interface EmployeeCreate {
 }
 
 export interface EmployeeUpdate {
-  full_name?: string
-  phone?: string
-  role?: UserRole
+  full_name?: string | null
+  role?: UserRole | null
   branch_id?: number | null
   department_id?: number | null
   position?: string | null
-  employment_type?: EmploymentType
+  employment_type?: EmploymentType | null
   hire_date?: string | null
-  base_salary?: number
+  base_salary?: number | null
   telegram_user_id?: string | null
-  is_active?: boolean
+  photo?: string | null
+  is_active?: boolean | null
 }
 
 // ─── Attendance ──────────────────────────────────────────────────────────────

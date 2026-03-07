@@ -7,22 +7,32 @@ import {
   Settings, ChevronLeft, ChevronRight,
 } from 'lucide-vue-next'
 import { useUiStore } from '@/stores/ui'
+import { usePermission } from '@/composables/usePermission'
 
 const ui = useUiStore()
 const route = useRoute()
+const { can } = usePermission()
 
-const navItems = [
-  { label: 'Dashboard',     to: '/',                 icon: LayoutDashboard },
-  { label: 'Xodimlar',      to: '/employees',        icon: Users           },
-  { label: 'Filiallar',     to: '/branches',         icon: Building2       },
-  { label: "Bo'limlar",     to: '/departments',      icon: FolderOpen      },
-  { label: 'Davomat',       to: '/attendance',       icon: Clock           },
-  { label: 'Oylik',         to: '/salary',           icon: DollarSign      },
-  { label: 'Bonus/Jarima',  to: '/bonus-deductions', icon: Gift            },
-  { label: 'KPI',           to: '/kpi',              icon: BarChart2       },
-  { label: "Ta'tillar",     to: '/leaves',           icon: Umbrella        },
-  { label: 'Sozlamalar',    to: '/settings',         icon: Settings        },
+const allNavItems = [
+  { label: 'Dashboard',    to: '/',                 icon: LayoutDashboard, permission: null },
+  { label: 'Xodimlar',     to: '/employees',        icon: Users,           permission: 'employees' },
+  { label: 'Filiallar',    to: '/branches',         icon: Building2,       permission: 'branches' },
+  { label: "Bo'limlar",    to: '/departments',      icon: FolderOpen,      permission: 'departments' },
+  { label: 'Davomat',      to: '/attendance',       icon: Clock,           permission: 'attendance' },
+  { label: 'Oylik',        to: '/salary',           icon: DollarSign,      permission: 'salary' },
+  { label: 'Bonus/Jarima', to: '/bonus-deductions', icon: Gift,            permission: 'bonus' },
+  { label: 'KPI',          to: '/kpi',              icon: BarChart2,       permission: 'kpi' },
+  { label: "Ta'tillar",    to: '/leaves',           icon: Umbrella,        permission: 'leaves' },
+  { label: 'Sozlamalar',   to: '/settings',         icon: Settings,        permission: 'settings' },
 ]
+
+// permission null = hamma ko'radi (Dashboard)
+// permission bor = can() true bo'lsa ko'rinadi
+const navItems = computed(() =>
+  allNavItems.filter(item =>
+    item.permission === null || can.value(item.permission as any)
+  )
+)
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
@@ -110,7 +120,6 @@ function isActive(to: string) {
           class="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
         >
           <div class="relative bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
-            <!-- Arrow -->
             <span class="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45" />
             {{ item.label }}
           </div>
@@ -118,7 +127,7 @@ function isActive(to: string) {
       </div>
     </nav>
 
-    <!-- Collapse toggle button -->
+    <!-- Collapse toggle -->
     <button
       class="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2d3148] flex items-center justify-center shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-[#232736] transition-all duration-150 z-10"
       @click="ui.toggleSidebar"

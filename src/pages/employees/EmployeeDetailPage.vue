@@ -12,7 +12,6 @@ import { usePermission } from '@/composables/usePermission'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppInput from '@/components/ui/AppInput.vue'
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import { formatDate, formatMoney, formatMonth, formatDateTime } from '@/utils/format'
 import type {
   AttendanceOut, SalaryRecordOut, BonusOut,
@@ -21,10 +20,10 @@ import type {
 } from '@/types'
 import api from '@/composables/useApi'
 
-const route  = useRoute()
-const router = useRouter()
-const store  = useEmployeeStore()
-const toast  = useToastStore()
+const route   = useRoute()
+const router  = useRouter()
+const store   = useEmployeeStore()
+const toast   = useToastStore()
 const { can } = usePermission()
 
 const id = Number(route.params.id)
@@ -34,27 +33,27 @@ type Tab = 'general' | 'attendance' | 'salary' | 'bonus' | 'kpi'
 const activeTab = ref<Tab>('general')
 
 const tabs: { key: Tab; label: string; icon: any }[] = [
-  { key: 'general',    label: 'Umumiy',        icon: User        },
-  { key: 'attendance', label: 'Davomat',        icon: Clock       },
-  { key: 'salary',     label: 'Oylik tarixi',   icon: DollarSign  },
-  { key: 'bonus',      label: 'Bonus/Jarima',   icon: Gift        },
-  { key: 'kpi',        label: 'KPI',            icon: BarChart2   },
+  { key: 'general',    label: 'Umumiy',      icon: User       },
+  { key: 'attendance', label: 'Davomat',      icon: Clock      },
+  { key: 'salary',     label: 'Oylik tarixi', icon: DollarSign },
+  { key: 'bonus',      label: 'Bonus/Jarima', icon: Gift       },
+  { key: 'kpi',        label: 'KPI',          icon: BarChart2  },
 ]
 
-// ── Loading states ────────────────────────────────────
+// ── Loading states ─────────────────────────────────────
 const pageLoading = ref(true)
 const saving      = ref(false)
+const tabLoading  = ref(false)
 
-// ── Tab data ──────────────────────────────────────────
+// ── Tab data ───────────────────────────────────────────
 const attendance = ref<AttendanceOut[]>([])
 const salaries   = ref<SalaryRecordOut[]>([])
 const bonuses    = ref<BonusOut[]>([])
 const deductions = ref<DeductionOut[]>([])
 const kpiList    = ref<KPIOut[]>([])
 const kpiSummary = ref<KPISummary | null>(null)
-const tabLoading = ref(false)
 
-// ── Edit mode ─────────────────────────────────────────
+// ── Edit mode ──────────────────────────────────────────
 const editing = ref(false)
 const form    = ref<EmployeeUpdate>({})
 
@@ -63,17 +62,17 @@ const departments = ref<DepartmentOut[]>([])
 
 const roles: { value: UserRole; label: string }[] = [
   { value: 'employee',       label: 'Xodim'         },
-  { value: 'hr_manager',     label: 'HR Menejer'     },
+  { value: 'hr_manager',     label: 'HR Menejer'    },
   { value: 'branch_manager', label: 'Filial Menejer' },
-  { value: 'accountant',     label: 'Buxgalter'      },
-  { value: 'admin',          label: 'Admin'          },
+  { value: 'accountant',     label: 'Buxgalter'     },
+  { value: 'admin',          label: 'Admin'         },
 ]
 
+// ✅ backend enum: 'full' | 'part' | 'contract'
 const employmentTypes: { value: EmploymentType; label: string }[] = [
-  { value: 'full_time', label: 'To\'liq stavka' },
-  { value: 'part_time', label: 'Yarim stavka'   },
-  { value: 'contract',  label: 'Kontrakt'       },
-  { value: 'intern',    label: 'Intern'         },
+  { value: 'full',     label: "To'liq stavka" },
+  { value: 'part',     label: 'Yarim stavka'  },
+  { value: 'contract', label: 'Kontrakt'      },
 ]
 
 function startEdit() {
@@ -81,14 +80,14 @@ function startEdit() {
   if (!e) return
   form.value = {
     full_name:        e.full_name,
-    phone:            e.phone,
     role:             e.role,
     branch_id:        e.branch_id ?? undefined,
     department_id:    e.department_id ?? undefined,
     position:         e.position ?? '',
     employment_type:  e.employment_type,
     hire_date:        e.hire_date ?? '',
-    base_salary:      e.base_salary,
+    // ✅ base_salary string keladi, Number() ga o'tkazamiz
+    base_salary:      Number(e.base_salary),
     telegram_user_id: e.telegram_user_id ?? '',
     is_active:        e.is_active,
   }
@@ -98,21 +97,23 @@ function startEdit() {
 async function saveEdit() {
   saving.value = true
   try {
-    const payload = { ...form.value }
+    const payload: EmployeeUpdate = { ...form.value }
+    // ✅ bo'sh string fieldlarni o'chirish — backend null kutadi yoki umuman yubormaslik kerak
     if (!payload.hire_date)        delete payload.hire_date
     if (!payload.telegram_user_id) delete payload.telegram_user_id
+    if (!payload.position)         delete payload.position
     await store.update(id, payload)
     toast.success('Xodim yangilandi')
     editing.value = false
-  } catch (_) {
-    toast.error('Saqlashda xatolik')
+  } catch {
+    // interceptor allaqachon toast chiqaradi
   } finally {
     saving.value = false
   }
 }
 
-// ── Tab data loaders ──────────────────────────────────
-const now = new Date()
+// ── Tab loaders ────────────────────────────────────────
+const now   = new Date()
 const year  = now.getFullYear()
 const month = now.getMonth() + 1
 
@@ -157,7 +158,7 @@ async function onTabChange(tab: Tab) {
   if (tab !== 'general') await loadTab(tab)
 }
 
-// ── Init ──────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────
 onMounted(async () => {
   try {
     await Promise.all([
@@ -165,7 +166,7 @@ onMounted(async () => {
       api.get('/api/branches',    { params: { size: 100, page: 1 } }).then(r => { branches.value    = r.data.items ?? [] }),
       api.get('/api/departments', { params: { size: 100, page: 1 } }).then(r => { departments.value = r.data.items ?? [] }),
     ])
-  } catch (_) {
+  } catch {
     toast.error('Xodim topilmadi')
     router.push('/employees')
   } finally {
@@ -177,7 +178,7 @@ const employee = computed(() => store.selected)
 
 const initials = computed(() => {
   const name = employee.value?.full_name ?? ''
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  return name.split(' ').slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase()
 })
 
 const kpiPercent = computed(() => {
@@ -264,7 +265,8 @@ const kpiPercent = computed(() => {
           </div>
           <div>
             <p class="text-xs text-gray-400 uppercase tracking-wide">Asosiy maosh</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">{{ formatMoney(employee.base_salary) }}</p>
+            <!-- ✅ base_salary string, Number() ga o'tkazamiz -->
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">{{ formatMoney(Number(employee.base_salary)) }}</p>
           </div>
           <div>
             <p class="text-xs text-gray-400 uppercase tracking-wide">Ishga kirgan</p>
@@ -319,8 +321,10 @@ const kpiPercent = computed(() => {
             <div class="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
           </div>
 
-          <!-- ── General tab ───────────────────────── -->
+          <!-- ── General tab ────────────────────────── -->
           <div v-else-if="activeTab === 'general'">
+
+            <!-- View mode -->
             <template v-if="!editing">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                 <div v-for="field in [
@@ -331,7 +335,7 @@ const kpiPercent = computed(() => {
                   { label: 'Lavozim',     value: employee.position ?? '—' },
                   { label: 'Filial',      value: employee.branch?.name ?? '—' },
                   { label: 'Bo\'lim',     value: employee.department?.name ?? '—' },
-                  { label: 'Maosh',       value: formatMoney(employee.base_salary) },
+                  { label: 'Maosh',       value: formatMoney(Number(employee.base_salary)) },
                 ]" :key="field.label">
                   <div>
                     <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">{{ field.label }}</p>
@@ -344,27 +348,31 @@ const kpiPercent = computed(() => {
             <!-- Edit form -->
             <template v-else>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
                 <AppInput v-model="form.full_name" label="To'liq ism" />
-                <AppInput v-model="form.phone" label="Telefon" />
-                <AppInput v-model="form.position" label="Lavozim" />
+                <AppInput v-model="form.position"  label="Lavozim" />
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rol</label>
-                  <select v-model="form.role" class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
+                  <select v-model="form.role"
+                    class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
                     <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
                   </select>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ish turi</label>
-                  <select v-model="form.employment_type" class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
+                  <!-- ✅ to'g'ri enum qiymatlari -->
+                  <select v-model="form.employment_type"
+                    class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
                     <option v-for="t in employmentTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
                   </select>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Filial</label>
-                  <select v-model="form.branch_id" class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
+                  <select v-model="form.branch_id"
+                    class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
                     <option :value="undefined">Tanlang</option>
                     <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
                   </select>
@@ -372,7 +380,8 @@ const kpiPercent = computed(() => {
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bo'lim</label>
-                  <select v-model="form.department_id" class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
+                  <select v-model="form.department_id"
+                    class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500">
                     <option :value="undefined">Tanlang</option>
                     <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
                   </select>
@@ -380,6 +389,7 @@ const kpiPercent = computed(() => {
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Asosiy maosh</label>
+                  <!-- ✅ v-model.number — input string qaytaradi, number kerak -->
                   <input v-model.number="form.base_salary" type="number" min="0"
                     class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 outline-none focus:border-primary-500"
                   />
@@ -395,20 +405,21 @@ const kpiPercent = computed(() => {
                 <AppInput v-model="form.telegram_user_id" label="Telegram ID" />
 
                 <div class="flex items-center gap-3">
-                  <input v-model="form.is_active" type="checkbox" id="is_active" class="w-4 h-4 rounded text-primary-500" />
+                  <input v-model="form.is_active" type="checkbox" id="is_active"
+                    class="w-4 h-4 rounded text-primary-500" />
                   <label for="is_active" class="text-sm text-gray-700 dark:text-gray-300">Faol xodim</label>
                 </div>
+
               </div>
             </template>
           </div>
 
-          <!-- ── Attendance tab ─────────────────────── -->
+          <!-- ── Attendance tab ──────────────────────── -->
           <div v-else-if="activeTab === 'attendance'">
             <div v-if="!attendance.length" class="text-center py-10 text-sm text-gray-400">Ma'lumot topilmadi</div>
             <div v-else class="space-y-2">
               <div
-                v-for="a in attendance"
-                :key="a.id"
+                v-for="a in attendance" :key="a.id"
                 class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]"
               >
                 <div>
@@ -426,13 +437,12 @@ const kpiPercent = computed(() => {
             </div>
           </div>
 
-          <!-- ── Salary tab ─────────────────────────── -->
+          <!-- ── Salary tab ──────────────────────────── -->
           <div v-else-if="activeTab === 'salary'">
             <div v-if="!salaries.length" class="text-center py-10 text-sm text-gray-400">Ma'lumot topilmadi</div>
             <div v-else class="space-y-2">
               <div
-                v-for="s in salaries"
-                :key="s.id"
+                v-for="s in salaries" :key="s.id"
                 class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]"
               >
                 <div>
@@ -440,57 +450,65 @@ const kpiPercent = computed(() => {
                     {{ formatMonth(s.period_year, s.period_month) }}
                   </p>
                   <p class="text-xs text-gray-400 mt-0.5">
-                    Asosiy: {{ formatMoney(s.base_salary) }}
+                    <!-- ✅ Decimal string → Number() -->
+                    Asosiy: {{ formatMoney(Number(s.base_salary)) }}
                   </p>
                 </div>
                 <div class="text-right">
-                  <p class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ formatMoney(s.net_salary) }}</p>
+                  <p class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ formatMoney(Number(s.net_salary)) }}</p>
                   <AppBadge :variant="s.status" size="sm" class="mt-1" />
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ── Bonus/Jarima tab ───────────────────── -->
+          <!-- ── Bonus/Jarima tab ────────────────────── -->
           <div v-else-if="activeTab === 'bonus'">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-              <!-- Bonuses -->
               <div>
                 <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Bonuslar</h4>
-                <div v-if="!bonuses.length" class="text-center py-8 text-sm text-gray-400 bg-gray-50 dark:bg-[#232736] rounded-xl">Bonus yo'q</div>
+                <div v-if="!bonuses.length"
+                  class="text-center py-8 text-sm text-gray-400 bg-gray-50 dark:bg-[#232736] rounded-xl">
+                  Bonus yo'q
+                </div>
                 <div v-else class="space-y-2">
-                  <div v-for="b in bonuses" :key="b.id" class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]">
+                  <div v-for="b in bonuses" :key="b.id"
+                    class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]">
                     <div>
                       <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ b.reason ?? b.bonus_type }}</p>
                       <p class="text-xs text-gray-400">{{ formatMonth(b.period_year, b.period_month) }}</p>
                     </div>
-                    <span class="text-sm font-bold text-green-500">+{{ formatMoney(b.amount) }}</span>
+                    <!-- ✅ amount string → Number() -->
+                    <span class="text-sm font-bold text-green-500">+{{ formatMoney(Number(b.amount)) }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Deductions -->
               <div>
                 <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Jarimalar</h4>
-                <div v-if="!deductions.length" class="text-center py-8 text-sm text-gray-400 bg-gray-50 dark:bg-[#232736] rounded-xl">Jarima yo'q</div>
+                <div v-if="!deductions.length"
+                  class="text-center py-8 text-sm text-gray-400 bg-gray-50 dark:bg-[#232736] rounded-xl">
+                  Jarima yo'q
+                </div>
                 <div v-else class="space-y-2">
-                  <div v-for="d in deductions" :key="d.id" class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]">
+                  <div v-for="d in deductions" :key="d.id"
+                    class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232736]">
                     <div>
                       <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ d.reason ?? d.deduction_type }}</p>
                       <p class="text-xs text-gray-400">{{ formatMonth(d.period_year, d.period_month) }}</p>
                     </div>
-                    <span class="text-sm font-bold text-red-500">-{{ formatMoney(d.amount) }}</span>
+                    <!-- ✅ amount string → Number() -->
+                    <span class="text-sm font-bold text-red-500">-{{ formatMoney(Number(d.amount)) }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ── KPI tab ────────────────────────────── -->
+          <!-- ── KPI tab ─────────────────────────────── -->
           <div v-else-if="activeTab === 'kpi'">
 
-            <!-- Summary -->
             <div v-if="kpiSummary" class="mb-5 p-4 rounded-xl bg-gray-50 dark:bg-[#232736]">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -512,14 +530,11 @@ const kpiPercent = computed(() => {
 
             <div v-if="!kpiList.length" class="text-center py-10 text-sm text-gray-400">KPI ma'lumoti topilmadi</div>
             <div v-else class="space-y-2">
-              <div
-                v-for="k in kpiList"
-                :key="k.id"
-                class="p-3 rounded-xl bg-gray-50 dark:bg-[#232736]"
-              >
+              <div v-for="k in kpiList" :key="k.id" class="p-3 rounded-xl bg-gray-50 dark:bg-[#232736]">
                 <div class="flex items-center justify-between mb-2">
                   <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ k.metric_name }}</p>
-                  <span class="text-xs font-bold text-primary-500">{{ k.score.toFixed(1) }} ball</span>
+                  <!-- ✅ score string → Number() -->
+                  <span class="text-xs font-bold text-primary-500">{{ Number(k.score).toFixed(1) }} ball</span>
                 </div>
                 <div class="flex items-center gap-4 text-xs text-gray-400">
                   <span>Maqsad: {{ k.target_value }}</span>
@@ -529,7 +544,7 @@ const kpiPercent = computed(() => {
                 <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mt-2 overflow-hidden">
                   <div
                     class="h-full bg-primary-500 rounded-full transition-all"
-                    :style="`width: ${Math.min((k.actual_value / k.target_value) * 100, 100)}%`"
+                    :style="`width: ${Math.min((Number(k.actual_value) / Number(k.target_value)) * 100, 100)}%`"
                   />
                 </div>
               </div>
