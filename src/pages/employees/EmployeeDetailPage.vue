@@ -9,6 +9,7 @@ import {
 import { useEmployeeStore } from '@/stores/employees'
 import { useToastStore } from '@/stores/toast'
 import { usePermission } from '@/composables/usePermission'
+import { useAuthStore }  from '@/stores/auth'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -24,7 +25,8 @@ const route   = useRoute()
 const router  = useRouter()
 const store   = useEmployeeStore()
 const toast   = useToastStore()
-const { can } = usePermission()
+const { can, canAny, isRole } = usePermission()
+const auth = useAuthStore()
 
 const id = Number(route.params.id)
 
@@ -32,13 +34,17 @@ const id = Number(route.params.id)
 type Tab = 'general' | 'attendance' | 'salary' | 'bonus' | 'kpi'
 const activeTab = ref<Tab>('general')
 
-const tabs: { key: Tab; label: string; icon: any }[] = [
-  { key: 'general',    label: 'Umumiy',      icon: User       },
-  { key: 'attendance', label: 'Davomat',      icon: Clock      },
-  { key: 'salary',     label: 'Oylik tarixi', icon: DollarSign },
-  { key: 'bonus',      label: 'Bonus/Jarima', icon: Gift       },
-  { key: 'kpi',        label: 'KPI',          icon: BarChart2  },
+const allTabs: { key: Tab; label: string; icon: any; perm?: string }[] = [
+  { key: 'general',    label: 'Umumiy',       icon: User       },
+  { key: 'attendance', label: 'Davomat',       icon: Clock,      perm: 'attendance' },
+  { key: 'salary',     label: 'Oylik tarixi',  icon: DollarSign, perm: 'salary'     },
+  { key: 'bonus',      label: 'Bonus/Jarima',  icon: Gift,       perm: 'bonus'      },
+  { key: 'kpi',        label: 'KPI',           icon: BarChart2,  perm: 'kpi'        },
 ]
+// Tabs: general hammaga, boshqalari permission bo'yicha
+const tabs = computed(() =>
+  allTabs.filter(t => !t.perm || can.value(t.perm as any))
+)
 
 // ── Loading states ─────────────────────────────────────
 const pageLoading = ref(true)

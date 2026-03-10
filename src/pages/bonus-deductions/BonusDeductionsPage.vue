@@ -203,6 +203,7 @@ const deductionCols = [
 </script>
 
 <template>
+  <div>
   <div class="space-y-6">
 
     <!-- Header -->
@@ -439,4 +440,5 @@ const deductionCols = [
       </AppButton>
     </template>
   </AppModal>
+  </div>
 </template>

@@ -2,8 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   Plus, RefreshCw, DollarSign, CheckCircle2,
-  FileText, Wallet, Filter, Users,
-} from 'lucide-vue-next'
+  FileText, Wallet, Filter, Users, Calendar } from 'lucide-vue-next'
 import { useToastStore } from '@/stores/toast'
 import { useConfirm } from '@/composables/useConfirm'
 import { usePermission } from '@/composables/usePermission'
@@ -88,11 +87,42 @@ function empName(id: number) {
 const showCreate   = ref(false)
 const creating     = ref(false)
 const selectedEmps = ref<number[]>([])
+const createYear   = ref(initYear)
+const createMonth  = ref(initMonth)
+
+// Preview: har xodim uchun bonus/deduction preview
+interface EmpPreview { bonusTotal: number; deductionTotal: number; loading: boolean }
+const empPreviews = ref<Record<number, EmpPreview>>({})
+
+async function fetchPreviewForEmp(empId: number) {
+  empPreviews.value[empId] = { bonusTotal: 0, deductionTotal: 0, loading: true }
+  try {
+    const params = { employee_id: empId, year: createYear.value, month: createMonth.value, size: 100 }
+    const [b, d] = await Promise.all([
+      api.get('/api/bonuses',    { params }),
+      api.get('/api/deductions', { params }),
+    ])
+    const bonusTotal     = (b.data.items ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0)
+    const deductionTotal = (d.data.items ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0)
+    empPreviews.value[empId] = { bonusTotal, deductionTotal, loading: false }
+  } catch {
+    empPreviews.value[empId] = { bonusTotal: 0, deductionTotal: 0, loading: false }
+  }
+}
 
 async function openCreate() {
   await fetchEmployees()
   selectedEmps.value = []
-  showCreate.value = true
+  empPreviews.value  = {}
+  createYear.value   = filterYear.value
+  createMonth.value  = filterMonth.value
+  showCreate.value   = true
+  employees.value.forEach(emp => fetchPreviewForEmp(emp.id))
+}
+
+async function onCreatePeriodChange() {
+  empPreviews.value = {}
+  employees.value.forEach(emp => fetchPreviewForEmp(emp.id))
 }
 
 function toggleAll() {
@@ -101,18 +131,40 @@ function toggleAll() {
       ? [] : employees.value.map(e => e.id)
 }
 
+function netForEmp(emp: EmployeeOut): number {
+  const p = empPreviews.value[emp.id]
+  if (!p || p.loading) return Number(emp.base_salary)
+  return Number(emp.base_salary) + p.bonusTotal - p.deductionTotal
+}
+
+const selectedTotal = computed(() =>
+  selectedEmps.value.reduce((sum, id) => {
+    const emp = employees.value.find(e => e.id === id)
+    return sum + (emp ? netForEmp(emp) : 0)
+  }, 0)
+)
+
 async function createSalaries() {
   if (!selectedEmps.value.length) { toast.warning('Kamida 1 ta xodim tanlang'); return }
   creating.value = true
-  let ok = 0, fail = 0
+  let ok = 0, skip = 0, fail = 0
   for (const emp_id of selectedEmps.value) {
     try {
-      await api.post('/api/salary', { employee_id: emp_id, period_year: filterYear.value, period_month: filterMonth.value })
+      await api.post('/api/salary', { employee_id: emp_id, period_year: createYear.value, period_month: createMonth.value })
       ok++
-    } catch { fail++ }
+    } catch (err: any) {
+      if (err?.response?.status === 409) skip++ // allaqachon mavjud
+      else fail++
+    }
   }
   creating.value = false; showCreate.value = false
-  toast.success(`${ok} ta oylik yaratildi${fail ? `, ${fail} ta xato` : ''}`)
+  const parts = []
+  if (ok)   parts.push(`${ok} ta yaratildi`)
+  if (skip) parts.push(`${skip} ta allaqachon mavjud`)
+  if (fail) parts.push(`${fail} ta xato`)
+  if (ok)   toast.success(parts.join(', '))
+  else if (skip) toast.warning(parts.join(', '))
+  else toast.error(parts.join(', '))
   fetchRecords()
 }
 
@@ -191,6 +243,7 @@ const columns = [
 </script>
 
 <template>
+  <div>
   <div class="space-y-6">
 
     <!-- Header -->
@@ -284,10 +337,10 @@ const columns = [
         <span class="text-sm font-mono text-gray-600 dark:text-gray-300">{{ formatMoney(Number(row.base_salary)) }}</span>
       </template>
       <template #cell-bonus="{ row }">
-        <span class="text-sm font-mono text-green-600">+{{ formatMoney(Number(row.bonus_total ?? 0)) }}</span>
+        <span class="text-sm font-mono text-green-600">+{{ formatMoney(Number(row.total_bonus ?? 0)) }}</span>
       </template>
       <template #cell-deduction="{ row }">
-        <span class="text-sm font-mono text-red-500">-{{ formatMoney(Number(row.deduction_total ?? 0)) }}</span>
+        <span class="text-sm font-mono text-red-500">-{{ formatMoney(Number(row.total_deduction ?? 0)) }}</span>
       </template>
       <template #cell-net="{ row }">
         <span class="text-sm font-bold font-mono text-gray-900 dark:text-gray-100">{{ formatMoney(Number(row.net_salary)) }}</span>
@@ -321,30 +374,84 @@ const columns = [
   <!-- Create Modal -->
   <AppModal v-model="showCreate" title="Oylik yaratish" size="lg">
     <div class="space-y-4">
-      <div class="flex items-center gap-2 p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 text-sm">
-        <component :is="Users" class="w-4 h-4 shrink-0" />
-        <span><strong>{{ formatMonth(filterYear, filterMonth) }}</strong> uchun oylik yaratiladi. Sistema avtomatik bonus/jarima hisoblab qo'shadi.</span>
+      <!-- Period selector -->
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20">
+        <component :is="Calendar" class="w-4 h-4 text-primary-500 shrink-0" />
+        <span class="text-sm text-primary-700 dark:text-primary-300 font-medium shrink-0">Davr:</span>
+        <select v-model.number="createYear" @change="onCreatePeriodChange"
+          class="text-sm bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-700 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary-500">
+          <option v-for="y in [initYear-1, initYear, initYear+1]" :key="y" :value="y">{{ y }}</option>
+        </select>
+        <select v-model.number="createMonth" @change="onCreatePeriodChange"
+          class="text-sm bg-white dark:bg-gray-800 border border-primary-200 dark:border-primary-700 rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary-500">
+          <option v-for="m in 12" :key="m" :value="m">{{ m }}-oy</option>
+        </select>
+        <span class="text-xs text-primary-600 dark:text-primary-400 ml-auto">{{ formatMonth(createYear, createMonth) }} uchun</span>
       </div>
+
+      <!-- Employee list with preview -->
       <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <input type="checkbox" :checked="selectedEmps.length === employees.length" class="w-4 h-4 accent-primary-500" @change="toggleAll" />
-          <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ selectedEmps.length }} / {{ employees.length }} tanlandi</span>
+        <!-- Header -->
+        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <input type="checkbox" :checked="selectedEmps.length === employees.length && employees.length > 0" class="w-4 h-4 accent-primary-500" @change="toggleAll" />
+          <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Xodim</span>
+          <span class="text-[10px] text-green-500 font-semibold uppercase tracking-wider w-20 text-right">Bonus</span>
+          <span class="text-[10px] text-red-400 font-semibold uppercase tracking-wider w-20 text-right">Jarima</span>
+          <span class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider w-24 text-right">Sof maosh</span>
         </div>
+
         <div v-if="empLoading" class="p-4 space-y-2">
           <SkeletonLoader v-for="i in 4" :key="i" variant="text" />
         </div>
-        <div v-else class="max-h-60 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
-          <label v-for="emp in employees" :key="emp.id" class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+
+        <div v-else class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/50">
+          <label
+            v-for="emp in employees" :key="emp.id"
+            :class="['grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-4 py-3 cursor-pointer transition-colors', selectedEmps.includes(emp.id) ? 'bg-primary-50/40 dark:bg-primary-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50']">
             <input type="checkbox" :value="emp.id" v-model="selectedEmps" class="w-4 h-4 accent-primary-500" />
-            <div class="flex-1 min-w-0">
+
+            <!-- Xodim info -->
+            <div class="min-w-0">
               <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ emp.full_name }}</p>
-              <p class="text-xs text-gray-400">{{ emp.position ?? '—' }}</p>
+              <p class="text-xs text-gray-400">{{ emp.position ?? '—' }} · {{ formatMoney(Number(emp.base_salary)) }}</p>
             </div>
-            <span class="text-xs font-mono text-gray-500 shrink-0">{{ formatMoney(Number(emp.base_salary)) }}</span>
+
+            <!-- Bonus -->
+            <div class="w-20 text-right">
+              <span v-if="empPreviews[emp.id]?.loading" class="text-xs text-gray-300 dark:text-gray-600">...</span>
+              <span v-else-if="(empPreviews[emp.id]?.bonusTotal ?? 0) > 0" class="text-xs font-mono font-semibold text-green-600">
+                +{{ formatMoney(empPreviews[emp.id]?.bonusTotal ?? 0) }}
+              </span>
+              <span v-else class="text-xs text-gray-300 dark:text-gray-600">—</span>
+            </div>
+
+            <!-- Jarima -->
+            <div class="w-20 text-right">
+              <span v-if="empPreviews[emp.id]?.loading" class="text-xs text-gray-300 dark:text-gray-600">...</span>
+              <span v-else-if="(empPreviews[emp.id]?.deductionTotal ?? 0) > 0" class="text-xs font-mono font-semibold text-red-500">
+                -{{ formatMoney(empPreviews[emp.id]?.deductionTotal ?? 0) }}
+              </span>
+              <span v-else class="text-xs text-gray-300 dark:text-gray-600">—</span>
+            </div>
+
+            <!-- Net maosh -->
+            <div class="w-24 text-right">
+              <span v-if="empPreviews[emp.id]?.loading" class="text-xs text-gray-300 dark:text-gray-600">...</span>
+              <span v-else class="text-sm font-bold font-mono" :class="netForEmp(emp) >= Number(emp.base_salary) ? 'text-gray-900 dark:text-gray-100' : 'text-red-500'">
+                {{ formatMoney(netForEmp(emp)) }}
+              </span>
+            </div>
           </label>
         </div>
       </div>
+
+      <!-- Tanlangan xodimlar jami -->
+      <div v-if="selectedEmps.length > 0" class="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <span class="text-sm text-gray-500">{{ selectedEmps.length }} ta xodim · jami to'lov:</span>
+        <span class="text-base font-bold font-mono text-gray-900 dark:text-gray-100">{{ formatMoney(selectedTotal) }}</span>
+      </div>
     </div>
+
     <template #footer>
       <AppButton variant="ghost" @click="showCreate = false">Bekor qilish</AppButton>
       <AppButton variant="primary" :loading="creating" :disabled="!selectedEmps.length" @click="createSalaries">
@@ -369,11 +476,11 @@ const columns = [
         </div>
         <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-3">
           <p class="text-xs text-green-500 mb-1">Jami bonus</p>
-          <p class="text-base font-bold font-mono text-green-600">+{{ formatMoney(Number(detailRec.bonus_total ?? 0)) }}</p>
+          <p class="text-base font-bold font-mono text-green-600">+{{ formatMoney(Number(detailRec.total_bonus ?? 0)) }}</p>
         </div>
         <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
           <p class="text-xs text-red-400 mb-1">Jami jarima</p>
-          <p class="text-base font-bold font-mono text-red-500">-{{ formatMoney(Number(detailRec.deduction_total ?? 0)) }}</p>
+          <p class="text-base font-bold font-mono text-red-500">-{{ formatMoney(Number(detailRec.total_deduction ?? 0)) }}</p>
         </div>
         <div class="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
           <p class="text-xs text-primary-500 mb-1">Sof maosh</p>
@@ -412,4 +519,5 @@ const columns = [
       </div>
     </div>
   </AppModal>
+  </div>
 </template>

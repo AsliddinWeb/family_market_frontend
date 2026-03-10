@@ -224,13 +224,14 @@ export interface SalaryRecordOut {
   period_year: number
   period_month: number
   base_salary: number
-  bonus_total: number
-  deduction_total: number
+  total_bonus: number
+  total_deduction: number
   late_deduction: number
+  leave_deduction: number
   net_salary: number
   status: SalaryStatus
   paid_at: string | null
-  created_at: string
+  notes: string | null
 }
 
 export interface SalaryRecordCreate {
@@ -334,23 +335,28 @@ export interface KPISummary {
 
 export interface KPITemplateOut {
   id: number
+  department_id: number | null
   metric_name: string
-  default_target: number
-  default_weight: number
+  target_value: number
+  weight: number
+  is_active: boolean
   description: string | null
 }
 
 export interface KPITemplateCreate {
   metric_name: string
-  default_target: number
-  default_weight?: number
+  target_value: number
+  weight?: number
+  department_id?: number | null
   description?: string | null
+  is_active?: boolean
 }
 
 export interface KPITemplateUpdate {
-  metric_name?: string
-  default_target?: number
-  default_weight?: number
+  metric_name?: string | null
+  target_value?: number | null
+  weight?: number | null
+  is_active?: boolean | null
   description?: string | null
 }
 
@@ -363,10 +369,11 @@ export interface LeaveOut {
   leave_type: LeaveType
   start_date: string
   end_date: string
+  days_count: number
   reason: string | null
   status: LeaveStatus
-  approved_by: number | null
-  created_at: string
+  approved_by_id: number | null
+  rejection_reason: string | null
 }
 
 export interface LeaveCreate {
@@ -379,6 +386,7 @@ export interface LeaveCreate {
 
 export interface LeaveStatusUpdate {
   status: 'approved' | 'rejected'
+  rejection_reason?: string | null
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
