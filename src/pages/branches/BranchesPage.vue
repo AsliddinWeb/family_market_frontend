@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Plus, Search, Pencil, Trash2, Building2, MapPin, Phone, Clock, Users } from 'lucide-vue-next'
+import { Plus, Search, Pencil, Trash2, Building2, MapPin, Phone, Clock, Navigation } from 'lucide-vue-next'
 import { useToastStore } from '@/stores/toast'
 import { useConfirm } from '@/composables/useConfirm'
 import { usePermission } from '@/composables/usePermission'
@@ -12,17 +12,17 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import api from '@/composables/useApi'
 import type { BranchOut, BranchCreate } from '@/types'
 
-const toast          = useToastStore()
-const { confirm }    = useConfirm()
+const toast           = useToastStore()
+const { confirm }     = useConfirm()
 const { can, isRole } = usePermission()
 
 // ── State ──────────────────────────────────────────────────────────────────
-const branches  = ref<BranchOut[]>([])
-const total     = ref(0)
-const page      = ref(1)
-const size      = ref(20)
-const search    = ref('')
-const loading   = ref(false)
+const branches   = ref<BranchOut[]>([])
+const total      = ref(0)
+const page       = ref(1)
+const size       = ref(20)
+const search     = ref('')
+const loading    = ref(false)
 
 const totalPages = computed(() => Math.ceil(total.value / size.value))
 
@@ -55,10 +55,10 @@ function changePage(p: number) {
 onMounted(fetchBranches)
 
 // ── Add / Edit Modal ───────────────────────────────────────────────────────
-const showModal  = ref(false)
-const modalMode  = ref<'add' | 'edit'>('add')
-const saving     = ref(false)
-const editId     = ref<number | null>(null)
+const showModal = ref(false)
+const modalMode = ref<'add' | 'edit'>('add')
+const saving    = ref(false)
+const editId    = ref<number | null>(null)
 
 const emptyForm = (): BranchCreate => ({
   name:            '',
@@ -66,10 +66,14 @@ const emptyForm = (): BranchCreate => ({
   phone:           '',
   manager_id:      undefined,
   work_start_time: '09:00',
+  work_end_time:   '18:00',
+  latitude:        null,
+  longitude:       null,
+  radius_meters:   200,
   is_active:       true,
 })
 
-const form   = ref<BranchCreate>(emptyForm())
+const form    = ref<BranchCreate>(emptyForm())
 const fErrors = ref<Partial<Record<keyof BranchCreate, string>>>({})
 
 function openAdd() {
@@ -81,14 +85,18 @@ function openAdd() {
 }
 
 function openEdit(branch: BranchOut) {
-  modalMode.value          = 'edit'
-  editId.value             = branch.id
-  form.value               = {
+  modalMode.value = 'edit'
+  editId.value    = branch.id
+  form.value = {
     name:            branch.name,
     address:         branch.address ?? '',
     phone:           branch.phone ?? '',
     manager_id:      branch.manager_id ?? undefined,
     work_start_time: branch.work_start_time ?? '09:00',
+    work_end_time:   branch.work_end_time   ?? '18:00',
+    latitude:        branch.latitude        ?? null,
+    longitude:       branch.longitude       ?? null,
+    radius_meters:   branch.radius_meters   ?? 200,
     is_active:       branch.is_active,
   }
   fErrors.value   = {}
@@ -126,7 +134,7 @@ async function deleteBranch(branch: BranchOut) {
   const ok = await confirm({
     title:   'Filialni o\'chirish',
     message: `"${branch.name}" filialni o\'chirishni tasdiqlaysizmi?`,
-    type: 'danger',
+    type:    'danger',
   })
   if (!ok) return
   await api.delete(`/api/branches/${branch.id}`)
@@ -145,11 +153,7 @@ async function deleteBranch(branch: BranchOut) {
         <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Filiallar</h1>
         <p class="text-sm text-gray-400 mt-0.5">Jami {{ total }} ta filial</p>
       </div>
-      <AppButton
-        v-if="can('branches')"
-        variant="primary"
-        @click="openAdd"
-      >
+      <AppButton v-if="can('branches')" variant="primary" @click="openAdd">
         <Plus class="w-4 h-4" />
         Filial qo'shish
       </AppButton>
@@ -202,7 +206,7 @@ async function deleteBranch(branch: BranchOut) {
             </div>
           </div>
 
-          <!-- Actions — faqat superadmin va admin -->
+          <!-- Actions -->
           <div
             v-if="isRole('superadmin', 'admin')"
             class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -232,9 +236,13 @@ async function deleteBranch(branch: BranchOut) {
             <Phone class="w-3.5 h-3.5 shrink-0" />
             <span>{{ branch.phone }}</span>
           </div>
-          <div v-if="branch.work_start_time" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <Clock class="w-3.5 h-3.5 shrink-0" />
-            <span>Ish boshlanishi: {{ branch.work_start_time }}</span>
+            <span>{{ branch.work_start_time ?? '09:00' }} — {{ branch.work_end_time ?? '18:00' }}</span>
+          </div>
+          <div v-if="branch.latitude && branch.longitude" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Navigation class="w-3.5 h-3.5 shrink-0" />
+            <span>{{ branch.latitude }}, {{ branch.longitude }} ({{ branch.radius_meters }}m)</span>
           </div>
         </div>
       </div>
@@ -242,23 +250,9 @@ async function deleteBranch(branch: BranchOut) {
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-2">
-      <AppButton
-        variant="ghost"
-        size="sm"
-        :disabled="page === 1"
-        @click="changePage(page - 1)"
-      >
-        ←
-      </AppButton>
+      <AppButton variant="ghost" size="sm" :disabled="page === 1" @click="changePage(page - 1)">←</AppButton>
       <span class="text-sm text-gray-500">{{ page }} / {{ totalPages }}</span>
-      <AppButton
-        variant="ghost"
-        size="sm"
-        :disabled="page === totalPages"
-        @click="changePage(page + 1)"
-      >
-        →
-      </AppButton>
+      <AppButton variant="ghost" size="sm" :disabled="page === totalPages" @click="changePage(page + 1)">→</AppButton>
     </div>
 
   </div>
@@ -288,10 +282,22 @@ async function deleteBranch(branch: BranchOut) {
         label="Telefon"
         placeholder="+998 90 123 45 67"
       />
+
+      <div class="grid grid-cols-2 gap-3">
+        <AppInput v-model="form.work_start_time" label="Ish boshlanishi" type="time" />
+        <AppInput v-model="form.work_end_time"   label="Ish tugashi"     type="time" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <AppInput v-model.number="form.latitude"  label="Latitude"  placeholder="41.2995" type="number" />
+        <AppInput v-model.number="form.longitude" label="Longitude" placeholder="69.2401" type="number" />
+      </div>
+
       <AppInput
-        v-model="form.work_start_time"
-        label="Ish boshlanish vaqti"
-        type="time"
+        v-model.number="form.radius_meters"
+        label="Geofence radius (metr)"
+        type="number"
+        placeholder="200"
       />
 
       <!-- is_active toggle -->
