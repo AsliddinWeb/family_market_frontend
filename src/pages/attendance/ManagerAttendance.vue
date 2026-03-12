@@ -1,16 +1,12 @@
 <script setup lang="ts">
 /**
  * ManagerAttendance.vue
- * admin / superadmin / hr_manager / branch_manager uchun:
- *   - Bugungi davomat (karta ko'rinish, filial filter)
- *   - Tarix (filter + jadval + pagination)
- *   - Qo'lda davomat qo'shish modal
- *   - Oylik xulosa (xodim tanlash bilan)
  */
 import { ref, computed, onMounted } from 'vue'
 import {
   Plus, Filter, RefreshCw, Clock, CheckCircle2,
   XCircle, AlertCircle, Users, Building2, LogIn, LogOut,
+  MapPin, Camera,
 } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -25,6 +21,7 @@ import { formatDate, formatTime, todayISO, currentYearMonth } from '@/utils/form
 import type { AttendanceOut, AttendanceSummary, AttendanceStatus, BranchOut, EmployeeOut } from '@/types'
 
 const toast = useToastStore()
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 // ── Lookup data ───────────────────────────────────────────────────────────
 const branches  = ref<BranchOut[]>([])
@@ -52,17 +49,25 @@ const todayRecords  = ref<AttendanceOut[]>([])
 const todayLoading  = ref(false)
 const todayBranchId = ref<number | undefined>(undefined)
 
+const sortedToday = computed(() =>
+  [...todayRecords.value].sort((a, b) => {
+    if (!a.check_in_time) return 1
+    if (!b.check_in_time) return -1
+    return b.check_in_time.localeCompare(a.check_in_time)
+  })
+)
+
 const filteredToday = computed(() =>
   todayBranchId.value
-    ? todayRecords.value.filter(r => r.employee?.branch_id === todayBranchId.value)
-    : todayRecords.value
+    ? sortedToday.value.filter(r => r.employee?.branch_id === todayBranchId.value)
+    : sortedToday.value
 )
 
 const todayStats = computed(() => ({
-  present:  filteredToday.value.filter(r => r.status === 'present').length,
-  late:     filteredToday.value.filter(r => r.status === 'late').length,
-  absent:   filteredToday.value.filter(r => r.status === 'absent').length,
-  total:    filteredToday.value.length,
+  present: filteredToday.value.filter(r => r.status === 'present').length,
+  late:    filteredToday.value.filter(r => r.status === 'late').length,
+  absent:  filteredToday.value.filter(r => r.status === 'absent').length,
+  total:   filteredToday.value.length,
 }))
 
 async function fetchToday() {
@@ -78,6 +83,28 @@ async function fetchToday() {
   } finally {
     todayLoading.value = false
   }
+}
+
+// ── DETAIL MODAL ──────────────────────────────────────────────────────────
+const showDetail = ref(false)
+const detailRec  = ref<AttendanceOut | null>(null)
+
+function openDetail(rec: AttendanceOut) {
+  detailRec.value  = rec
+  showDetail.value = true
+}
+
+function photoUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  return `${BASE_URL}/media/${path}`
+}
+
+function hasValidCoords(loc: { latitude: number; longitude: number } | null): boolean {
+  return !!loc && (loc.latitude !== 0 || loc.longitude !== 0)
+}
+
+function locationUrl(lat: number, lng: number): string {
+  return `https://maps.google.com/?q=${lat},${lng}`
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────────────
@@ -158,7 +185,7 @@ const form      = ref({
 const fErrors = ref<Record<string, string>>({})
 
 function openModal() {
-  form.value  = { employee_id: 0, date: todayISO(), check_in_time: '', check_out_time: '', status: 'present', notes: '' }
+  form.value    = { employee_id: 0, date: todayISO(), check_in_time: '', check_out_time: '', status: 'present', notes: '' }
   fErrors.value = {}
   showModal.value = true
 }
@@ -195,7 +222,7 @@ async function save() {
 }
 
 function refresh() {
-  if (activeTab.value === 'today') fetchToday()
+  if (activeTab.value === 'today')        fetchToday()
   else if (activeTab.value === 'history') fetchHistory()
 }
 
@@ -216,18 +243,22 @@ const historyColumns = [
   { key: 'status',    label: 'Holat' },
 ]
 
-const statusBg: Record<AttendanceStatus, string> = {
+const statusBg: Record<string, string> = {
   present:  'bg-green-50  dark:bg-green-900/20  border-green-100  dark:border-green-800/30',
   late:     'bg-amber-50  dark:bg-amber-900/20  border-amber-100  dark:border-amber-800/30',
   absent:   'bg-red-50    dark:bg-red-900/20    border-red-100    dark:border-red-800/30',
   half_day: 'bg-blue-50   dark:bg-blue-900/20   border-blue-100   dark:border-blue-800/30',
   holiday:  'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/30',
 }
-const statusIconMap: Record<AttendanceStatus, any> = {
+const statusIconMap: Record<string, any> = {
   present: CheckCircle2, late: AlertCircle, absent: XCircle, half_day: Clock, holiday: CheckCircle2,
 }
-const statusIconColor: Record<AttendanceStatus, string> = {
-  present: 'text-green-500', late: 'text-amber-500', absent: 'text-red-500', half_day: 'text-blue-400', holiday: 'text-purple-500',
+const statusIconColor: Record<string, string> = {
+  present:  'text-green-500',
+  late:     'text-amber-500',
+  absent:   'text-red-500',
+  half_day: 'text-blue-400',
+  holiday:  'text-purple-500',
 }
 
 const months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
@@ -288,7 +319,6 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
       <!-- ── BUGUNGI ──────────────────────────────────────────────────── -->
       <template v-if="activeTab === 'today'">
 
-        <!-- Filial filter -->
         <div class="flex items-center gap-2 flex-wrap">
           <button
             :class="[
@@ -314,39 +344,31 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           >
             <component :is="Building2" class="w-3.5 h-3.5" />
             {{ b.name }}
-            <span class="text-xs opacity-75">
-              ({{ todayRecords.filter(r => r.employee?.branch_id === b.id).length }})
-            </span>
+            <span class="text-xs opacity-75">({{ todayRecords.filter(r => r.employee?.branch_id === b.id).length }})</span>
           </button>
         </div>
 
-        <!-- Loading skeleton -->
         <div v-if="todayLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          <div
-            v-for="i in 8" :key="i"
-            class="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-gray-700 p-4 space-y-3"
-          >
+          <div v-for="i in 8" :key="i" class="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-gray-700 p-4 space-y-3">
             <SkeletonLoader variant="text" class="w-20" />
             <SkeletonLoader variant="text" class="w-32" />
             <SkeletonLoader variant="text" class="w-24" />
           </div>
         </div>
 
-        <!-- Empty -->
         <div v-else-if="!filteredToday.length" class="flex flex-col items-center justify-center py-20 text-center">
           <component :is="Users" class="w-12 h-12 text-gray-200 dark:text-gray-700 mb-3" />
           <p class="text-sm font-medium text-gray-500">
             {{ todayBranchId ? "Bu filial bo'yicha bugun qayd yo'q" : 'Bugun hech kim qayd etilmadi' }}
           </p>
-          <p class="text-xs text-gray-400 mt-1">Telegram bot orqali yoki qo'lda qo'shing</p>
         </div>
 
-        <!-- Cards -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           <div
             v-for="(rec, idx) in filteredToday" :key="rec.id"
-            :class="['rounded-2xl border p-4 transition-shadow hover:shadow-md', statusBg[rec.status]]"
+            :class="['rounded-2xl border p-4 transition-shadow hover:shadow-md cursor-pointer', statusBg[rec.status]]"
             :style="`animation: fadeInRow 150ms ease forwards; animation-delay: ${idx * 20}ms; opacity: 0`"
+            @click="openDetail(rec)"
           >
             <div class="flex items-center justify-between mb-3">
               <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/60 dark:bg-black/20">
@@ -354,7 +376,6 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
               </div>
               <AppBadge :variant="rec.status" size="sm" />
             </div>
-
             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
               {{ rec.employee?.full_name ?? `Xodim #${rec.employee_id}` }}
             </p>
@@ -362,9 +383,7 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
               <component :is="Building2" class="w-3 h-3 text-gray-400 shrink-0" />
               <p class="text-xs text-gray-500 truncate">{{ rec.employee?.branch?.name ?? '—' }}</p>
             </div>
-
             <div class="my-3 border-t border-black/5 dark:border-white/5" />
-
             <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                 <component :is="LogIn" class="w-3.5 h-3.5 text-green-500" />
@@ -375,12 +394,10 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
                 <span class="font-mono font-medium">{{ rec.check_out_time ? formatTime(rec.check_out_time) : '—' }}</span>
               </div>
             </div>
-
             <div v-if="rec.late_minutes > 0" class="mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
               <component :is="Clock" class="w-3 h-3" />
               <span>{{ rec.late_minutes }} daqiqa kechikdi</span>
             </div>
-
             <div class="mt-2">
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {{ rec.source === 'telegram' ? '🤖 Telegram' : rec.source === 'manual' ? '✍️ Qo\'l' : rec.source }}
@@ -496,7 +513,6 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
               Ko'rish
             </AppButton>
           </div>
-
           <div v-if="summaryLoading" class="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
             <SkeletonLoader v-for="i in 5" :key="i" variant="text" class="h-20" />
           </div>
@@ -530,7 +546,7 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
 
     </div>
 
-    <!-- Manual Entry Modal -->
+    <!-- ── Manual Entry Modal ──────────────────────────────────────────── -->
     <AppModal v-model="showModal" title="Davomat qo'shish">
       <div class="space-y-4">
         <div>
@@ -546,9 +562,7 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           </select>
           <p v-if="fErrors.employee_id" class="text-xs text-red-500 mt-1">{{ fErrors.employee_id }}</p>
         </div>
-
         <AppInput v-model="form.date" label="Sana" type="date" required />
-
         <div>
           <label class="block text-[11px] text-gray-400 uppercase tracking-wide mb-2">Holat</label>
           <div class="grid grid-cols-2 gap-2">
@@ -567,19 +581,134 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
             </button>
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
-          <AppInput v-model="form.check_in_time" label="Kelish vaqti" type="time" />
+          <AppInput v-model="form.check_in_time"  label="Kelish vaqti" type="time" />
           <AppInput v-model="form.check_out_time" label="Ketish vaqti" type="time" />
         </div>
-
         <AppInput v-model="form.notes" label="Izoh" placeholder="Ixtiyoriy..." :maxlength="200" />
       </div>
-
       <template #footer>
         <AppButton variant="ghost" @click="showModal = false">Bekor qilish</AppButton>
         <AppButton variant="primary" :loading="saving" @click="save">Saqlash</AppButton>
       </template>
     </AppModal>
+
+    <!-- ── Detail Modal ────────────────────────────────────────────────── -->
+    <AppModal v-model="showDetail" :title="detailRec?.employee?.full_name ?? 'Davomat tafsiloti'">
+      <div v-if="detailRec" class="space-y-4">
+
+        <div class="flex items-center justify-between">
+          <AppBadge :variant="detailRec.status" />
+          <span class="text-xs text-gray-400">{{ formatDate(detailRec.date) }}</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 border border-green-100 dark:border-green-800/30">
+            <p class="text-[11px] text-green-500 uppercase tracking-wide mb-1">Kelish</p>
+            <p class="text-lg font-bold text-green-700 dark:text-green-400 font-mono">
+              {{ detailRec.check_in_time ? formatTime(detailRec.check_in_time) : '—' }}
+            </p>
+          </div>
+          <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 border border-red-100 dark:border-red-800/30">
+            <p class="text-[11px] text-red-400 uppercase tracking-wide mb-1">Ketish</p>
+            <p class="text-lg font-bold text-red-600 dark:text-red-400 font-mono">
+              {{ detailRec.check_out_time ? formatTime(detailRec.check_out_time) : '—' }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="detailRec.late_minutes > 0" class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800/30">
+          <component :is="Clock" class="w-4 h-4 text-amber-500 shrink-0" />
+          <span class="text-sm font-medium text-amber-700 dark:text-amber-400">{{ detailRec.late_minutes }} daqiqa kechikdi</span>
+        </div>
+
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Manba</span>
+          <span class="font-medium text-gray-700 dark:text-gray-300">
+            {{ detailRec.source === 'telegram' ? '🤖 Telegram bot' : detailRec.source === 'manual' ? '✍️ Qo\'lda kiritilgan' : detailRec.source }}
+          </span>
+        </div>
+
+        <!-- Kelish rasmi -->
+        <div v-if="detailRec.check_in_photo">
+          <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <component :is="Camera" class="w-3.5 h-3.5" /> Kelish rasmi
+          </p>
+          <img
+            :src="photoUrl(detailRec.check_in_photo) ?? ''"
+            alt="Kelish rasmi"
+            class="w-full rounded-xl object-cover max-h-56 border border-gray-100 dark:border-gray-700"
+          />
+        </div>
+
+        <!-- Ketish rasmi -->
+        <div v-if="detailRec.check_out_photo">
+          <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <component :is="Camera" class="w-3.5 h-3.5" /> Ketish rasmi
+          </p>
+          <img
+            :src="photoUrl(detailRec.check_out_photo) ?? ''"
+            alt="Ketish rasmi"
+            class="w-full rounded-xl object-cover max-h-56 border border-gray-100 dark:border-gray-700"
+          />
+        </div>
+
+        <!-- Kelish koordinatasi -->
+        <div v-if="detailRec.check_in_location">
+          <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <component :is="MapPin" class="w-3.5 h-3.5" /> Kelish joylashuvi
+          </p>
+          <div v-if="hasValidCoords(detailRec.check_in_location)">
+            <a
+              :href="locationUrl(detailRec.check_in_location.latitude, detailRec.check_in_location.longitude)"
+              target="_blank"
+              class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
+            >
+              <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
+              <div>
+                <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
+                  {{ detailRec.check_in_location.latitude }}, {{ detailRec.check_in_location.longitude }}
+                </p>
+                <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
+              </div>
+            </a>
+          </div>
+          <p v-else class="text-sm text-gray-400">Koordinata aniqlanmadi (0, 0)</p>
+        </div>
+
+        <!-- Ketish koordinatasi -->
+        <div v-if="detailRec.check_out_location">
+          <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <component :is="MapPin" class="w-3.5 h-3.5" /> Ketish joylashuvi
+          </p>
+          <div v-if="hasValidCoords(detailRec.check_out_location)">
+            <a
+              :href="locationUrl(detailRec.check_out_location.latitude, detailRec.check_out_location.longitude)"
+              target="_blank"
+              class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
+            >
+              <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
+              <div>
+                <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
+                  {{ detailRec.check_out_location.latitude }}, {{ detailRec.check_out_location.longitude }}
+                </p>
+                <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
+              </div>
+            </a>
+          </div>
+          <p v-else class="text-sm text-gray-400">Koordinata aniqlanmadi (0, 0)</p>
+        </div>
+
+        <!-- Izoh -->
+        <div v-if="detailRec.notes" class="px-3 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm text-gray-600 dark:text-gray-300">
+          {{ detailRec.notes }}
+        </div>
+
+      </div>
+      <template #footer>
+        <AppButton variant="ghost" @click="showDetail = false">Yopish</AppButton>
+      </template>
+    </AppModal>
+
   </div>
 </template>

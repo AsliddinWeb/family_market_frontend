@@ -217,6 +217,11 @@ export interface EmployeeUpdate {
 
 // ─── Attendance ──────────────────────────────────────────────────────────────
 
+export interface AttendanceLocation {
+  latitude: number
+  longitude: number
+}
+
 export interface AttendanceOut {
   id: number
   employee_id: number
@@ -224,6 +229,10 @@ export interface AttendanceOut {
   date: string
   check_in_time: string | null
   check_out_time: string | null
+  check_in_photo: string | null
+  check_out_photo: string | null
+  check_in_location: AttendanceLocation | null
+  check_out_location: AttendanceLocation | null
   status: AttendanceStatus
   source: AttendanceSource
   late_minutes: number
