@@ -10,12 +10,34 @@ export type UserRole =
 
 export type EmploymentType = 'full' | 'part' | 'contract'
 
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day'
+export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+
+export const ALL_WEEK_DAYS: WeekDay[] = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+]
+
+export const WEEK_DAY_LABELS: Record<WeekDay, string> = {
+  monday: 'Du', tuesday: 'Se', wednesday: 'Ch',
+  thursday: 'Pa', friday: 'Ju', saturday: 'Sh', sunday: 'Ya',
+}
+
+// ✅ holiday qo'shildi — dam olish kunida ishlagan xodim
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day' | 'holiday'
 export type AttendanceSource = 'manual' | 'telegram' | 'system'
 
 export type SalaryStatus = 'draft' | 'approved' | 'paid'
 
-export type BonusType = 'performance' | 'holiday' | 'project' | 'other'
+// ✅ holiday_work qo'shildi — dam olish kuni ishlash bonusi
+export type BonusType = 'performance' | 'holiday' | 'holiday_work' | 'project' | 'other'
+
+export const BONUS_TYPE_LABELS: Record<BonusType, string> = {
+  performance:  'Samaradorlik',
+  holiday:      'Bayram',
+  holiday_work: 'Dam olish kuni',
+  project:      'Loyiha',
+  other:        'Boshqa',
+}
+
 export type DeductionType = 'late' | 'absent' | 'damage' | 'advance' | 'other'
 
 export type LeaveType = 'annual' | 'sick' | 'unpaid' | 'maternity' | 'other'
@@ -58,6 +80,10 @@ export interface BranchOut {
   phone: string | null
   manager_id: number | null
   work_start_time: string | null
+  work_end_time: string | null     // yangi
+  latitude: number | null          // yangi — GPS
+  longitude: number | null         // yangi — GPS
+  radius_meters: number            // yangi — geofence radius
   is_active: boolean
   employee_count?: number
 }
@@ -74,6 +100,10 @@ export interface BranchCreate {
   phone?: string | null
   manager_id?: number | null
   work_start_time?: string | null
+  work_end_time?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  radius_meters?: number
   is_active: boolean
 }
 
@@ -83,6 +113,10 @@ export interface BranchUpdate {
   phone?: string | null
   manager_id?: number | null
   work_start_time?: string | null
+  work_end_time?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  radius_meters?: number | null
   is_active?: boolean
 }
 
@@ -134,15 +168,17 @@ export interface EmployeeOut {
   position: string | null
   employment_type: EmploymentType
   hire_date: string | null
-  base_salary: string        // Decimal → string
+  base_salary: string             // Decimal → string
+  hourly_rate: string | null      // yangi — Decimal → string
+  work_hours_per_day: number      // yangi
+  off_days: WeekDay[]             // yangi
   telegram_user_id: string | null
   photo: string | null
+  face_photo: string | null       // yangi — yuz tanish rasmi
   is_active: boolean
 }
 
-export interface EmployeeDetail extends EmployeeOut {
-  // extended fields if backend returns more
-}
+export interface EmployeeDetail extends EmployeeOut {}
 
 export interface EmployeeCreate {
   phone: string
@@ -155,6 +191,9 @@ export interface EmployeeCreate {
   employment_type?: EmploymentType
   hire_date?: string | null
   base_salary?: number
+  hourly_rate?: number | null
+  work_hours_per_day?: number
+  off_days?: WeekDay[]
   telegram_user_id?: string | null
 }
 
@@ -167,8 +206,12 @@ export interface EmployeeUpdate {
   employment_type?: EmploymentType | null
   hire_date?: string | null
   base_salary?: number | null
+  hourly_rate?: number | null
+  work_hours_per_day?: number | null
+  off_days?: WeekDay[] | null
   telegram_user_id?: string | null
   photo?: string | null
+  face_photo?: string | null
   is_active?: boolean | null
 }
 
@@ -212,6 +255,7 @@ export interface AttendanceSummary {
   absent: number
   late: number
   half_day: number
+  holiday: number              // yangi
   total_late_minutes: number
 }
 
@@ -256,6 +300,7 @@ export interface BonusOut {
   period_year: number
   period_month: number
   auto_generated: boolean
+  attendance_id: number | null    // yangi — qaysi attendance ga bog'liq
   created_at: string
 }
 
@@ -400,7 +445,7 @@ export interface DashboardStats {
   active_employees: number
 }
 
-// ─── Paginated Responses ─────────────────────────────────────────────────────
+// ─── Paginated ───────────────────────────────────────────────────────────────
 
 export interface Paginated<T> {
   items: T[]
@@ -410,17 +455,17 @@ export interface Paginated<T> {
   pages: number
 }
 
-export type PaginatedEmployees    = Paginated<EmployeeOut>
-export type PaginatedBranches     = Paginated<BranchOut>
-export type PaginatedDepartments  = Paginated<DepartmentOut>
-export type PaginatedAttendance   = Paginated<AttendanceOut>
+export type PaginatedEmployees     = Paginated<EmployeeOut>
+export type PaginatedBranches      = Paginated<BranchOut>
+export type PaginatedDepartments   = Paginated<DepartmentOut>
+export type PaginatedAttendance    = Paginated<AttendanceOut>
 export type PaginatedSalaryRecords = Paginated<SalaryRecordOut>
-export type PaginatedBonuses      = Paginated<BonusOut>
-export type PaginatedDeductions   = Paginated<DeductionOut>
-export type PaginatedKPI          = Paginated<KPIOut>
-export type PaginatedLeaves       = Paginated<LeaveOut>
+export type PaginatedBonuses       = Paginated<BonusOut>
+export type PaginatedDeductions    = Paginated<DeductionOut>
+export type PaginatedKPI           = Paginated<KPIOut>
+export type PaginatedLeaves        = Paginated<LeaveOut>
 
-// ─── API Query Params ─────────────────────────────────────────────────────────
+// ─── Query Params ─────────────────────────────────────────────────────────────
 
 export interface PaginationParams {
   page?: number

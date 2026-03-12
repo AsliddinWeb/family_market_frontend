@@ -18,20 +18,25 @@ const allNavItems = [
   { label: 'Xodimlar',     to: '/employees',        icon: Users,           permission: 'employees' },
   { label: 'Filiallar',    to: '/branches',         icon: Building2,       permission: 'branches' },
   { label: "Bo'limlar",    to: '/departments',      icon: FolderOpen,      permission: 'departments' },
-  { label: 'Davomat',      to: '/attendance',       icon: Clock,           permission: 'attendance' },
+  { label: 'Davomat',      to: '/attendance',       icon: Clock,           permissions: ['attendance', 'attendance.own'] },
   { label: 'Oylik',        to: '/salary',           icon: DollarSign,      permission: 'salary' },
   { label: 'Bonus/Jarima', to: '/bonus-deductions', icon: Gift,            permission: 'bonus' },
-  { label: 'KPI',          to: '/kpi',              icon: BarChart2,       permission: 'kpi' },
-  { label: "Ta'tillar",    to: '/leaves',           icon: Umbrella,        permission: 'leaves' },
+  { label: 'KPI',          to: '/kpi',              icon: BarChart2,       permissions: ['kpi', 'kpi.own'] },
+  { label: "Ta'tillar",    to: '/leaves',           icon: Umbrella,        permissions: ['leaves', 'leaves.own'] },
   { label: 'Sozlamalar',   to: '/settings',         icon: Settings,        permission: 'settings' },
 ]
 
 // permission null = hamma ko'radi (Dashboard)
-// permission bor = can() true bo'lsa ko'rinadi
+// permissions array = istalgan bittasi true bo'lsa ko'rinadi
+// permission string = can() true bo'lsa ko'rinadi
 const navItems = computed(() =>
-  allNavItems.filter(item =>
-    item.permission === null || can.value(item.permission as any)
-  )
+  allNavItems.filter(item => {
+    if (item.permission === null) return true
+    if ('permissions' in item && item.permissions) {
+      return item.permissions.some((p: any) => can.value(p))
+    }
+    return can.value(item.permission as any)
+  })
 )
 
 function isActive(to: string) {
