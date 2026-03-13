@@ -266,6 +266,34 @@ async function updateStatus(rec: SalaryRecordOut, newStatus: string) {
   }
 }
 
+// ── Batch approve ─────────────────────────────────────────────────────────
+const batchApproving = ref(false)
+const draftIds = computed(() => records.value.filter(r => r.status === 'draft').map(r => r.id))
+
+async function batchApprove() {
+  if (!draftIds.value.length) return
+  const ok = await confirm({
+    title:   'Batch tasdiqlash',
+    message: `${draftIds.value.length} ta oylikni tasdiqlaysizmi?`,
+    type:    'info',
+  })
+  if (!ok) return
+  batchApproving.value = true
+  try {
+    const { data } = await api.post('/api/salary/batch-status', {
+      ids:    draftIds.value,
+      status: 'approved',
+    })
+    toast.success(`${data.ok} ta oylik tasdiqlandi`)
+    await fetchRecords()
+    await fetchMonthSummaries()
+  } catch {
+    toast.error('Xato yuz berdi')
+  } finally {
+    batchApproving.value = false
+  }
+}
+
 // ── Batch to'lov ──────────────────────────────────────────────────────────
 const selected    = ref<number[]>([])
 const batchPaying = ref(false)
@@ -382,6 +410,16 @@ async function applyFilter() {
       <div class="flex items-center gap-2">
         <AppButton variant="ghost" size="sm" :loading="loading" @click="fetchRecords">
           <component :is="RefreshCw" class="w-4 h-4" />
+        </AppButton>
+        <AppButton
+          v-if="canApprove && draftIds.length > 0"
+          variant="ghost"
+          size="sm"
+          :loading="batchApproving"
+          @click="batchApprove"
+        >
+          <component :is="CheckCircle2" class="w-4 h-4" />
+          <span class="hidden sm:inline">Barchasini tasdiqlash ({{ draftIds.length }})</span>
         </AppButton>
         <AppButton v-if="canCreate && availableEmps.length > 0" variant="primary" @click="openCreate">
           <component :is="Plus" class="w-4 h-4" />
