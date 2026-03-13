@@ -66,7 +66,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'salary',
         name: 'salary',
-        component: () => import('@/pages/salary/SalaryPage.vue'),
+        component: () => import('@/pages/salary/SalaryIndex.vue'),
         meta: { permission: 'salary' },
       },
       {
