@@ -13,8 +13,22 @@ export function formatDateTime(dateStr: string): string {
   return formatDate(dateStr, 'dd.MM.yyyy HH:mm')
 }
 
-export function formatTime(dateStr: string): string {
-  return formatDate(dateStr, 'HH:mm')
+export function formatTime(timeStr: string): string {
+  if (!timeStr) return '—'
+  // "18:19:38.857928" yoki "18:19:38" → "18:19"
+  if (/^\d{2}:\d{2}/.test(timeStr)) {
+    return timeStr.slice(0, 5)
+  }
+  // ISO datetime string bo'lsa date-fns bilan parse qilamiz
+  return formatDate(timeStr, 'HH:mm')
+}
+
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`
+  const km = meters / 1000
+  return km < 10
+    ? `${km.toFixed(1)} km`   // 1.4 km
+    : `${Math.round(km)} km`  // 12 km
 }
 
 export function formatMoney(amount: number, currency = 'so\'m'): string {

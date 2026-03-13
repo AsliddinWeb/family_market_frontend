@@ -17,7 +17,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import api from '@/composables/useApi'
 import { useToastStore } from '@/stores/toast'
-import { formatDate, formatTime, todayISO, currentYearMonth } from '@/utils/format'
+import { formatDate, formatTime, formatDistance, todayISO, currentYearMonth } from '@/utils/format'
 import type { AttendanceOut, AttendanceSummary, AttendanceStatus, BranchOut, EmployeeOut } from '@/types'
 
 const toast = useToastStore()
@@ -77,7 +77,7 @@ function calcDistance(rec: AttendanceOut, locType: 'in' | 'out'): DistanceInfo |
   const inside = meters <= radius
   const label  = inside
     ? `Ofis qamrovida`
-    : `${Math.round(meters)} m uzoqda`
+    : `${formatDistance(meters)} uzoqda`
 
   return { meters: Math.round(meters), inside, radius, label }
 }
