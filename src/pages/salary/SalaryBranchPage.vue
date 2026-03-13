@@ -9,7 +9,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import {
   ArrowLeft, Plus, RefreshCw, DollarSign, CheckCircle2,
   FileText, Wallet, Filter, Users, Calendar, Building2,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, TrendingUp, Clock,
 } from 'lucide-vue-next'
 import AppButton      from '@/components/ui/AppButton.vue'
 import AppBadge       from '@/components/ui/AppBadge.vue'
@@ -23,6 +23,28 @@ import { usePermission }  from '@/composables/usePermission'
 import api from '@/composables/useApi'
 import { formatMoney, formatMonth, currentYearMonth } from '@/utils/format'
 import type { BranchOut, SalaryRecordOut, BonusOut, DeductionOut, EmployeeOut } from '@/types'
+
+interface DailyDay {
+  date: string
+  day: number
+  weekday: string
+  is_off: boolean
+  status: 'present' | 'absent' | 'off' | 'active' | 'no_checkout'
+  worked_hours: number
+  earned: number
+}
+interface DailyEarnings {
+  employee_id: number
+  year: number
+  month: number
+  hourly_rate: number
+  base_salary: number
+  today_hours: number
+  today_earned: number
+  total_hours: number
+  total_earned: number
+  days: DailyDay[]
+}
 
 // ── Props / Emits ─────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -351,16 +373,49 @@ async function openDetail(rec: SalaryRecordOut) {
   }
 }
 
+// ── Daily Earnings Modal ──────────────────────────────────────────────────
+const showDaily      = ref(false)
+const dailyLoading   = ref(false)
+const dailyData      = ref<DailyEarnings | null>(null)
+const dailyEmpName   = ref('')
+
+const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  present:    { label: '✅ Keldi',       cls: 'text-green-600' },
+  active:     { label: '🟢 Ishda',       cls: 'text-blue-600' },
+  absent:     { label: '❌ Kelmadi',     cls: 'text-red-500' },
+  no_checkout: { label: '⚠️ Chiqmadi',  cls: 'text-yellow-600' },
+  off:        { label: '🔵 Dam olish',   cls: 'text-gray-400' },
+}
+
+async function openDailyModal(empId: number, empName: string) {
+  dailyEmpName.value = empName
+  showDaily.value    = true
+  dailyLoading.value = true
+  dailyData.value    = null
+  try {
+    const { data } = await api.get(`/api/salary/daily-earnings/${empId}`, {
+      params: { year: filterYear.value, month: filterMonth.value },
+    })
+    dailyData.value = data
+  } catch {
+    toast.error('Kunlik ma\'lumot yuklanmadi')
+    showDaily.value = false
+  } finally {
+    dailyLoading.value = false
+  }
+}
+
 // ── Table columns ─────────────────────────────────────────────────────────
 const columns = [
-  { key: 'chk',       label: '',          width: '40px' },
-  { key: 'employee',  label: 'Xodim',     mobileTitle: true },
-  { key: 'base',      label: 'Asosiy',    responsive: 'md' },
-  { key: 'bonus',     label: 'Bonus',     responsive: 'md' },
-  { key: 'deduction', label: 'Jarima',    responsive: 'md' },
+  { key: 'chk',       label: '',           width: '40px' },
+  { key: 'employee',  label: 'Xodim',      mobileTitle: true },
+  { key: 'earned',    label: 'Topgan',      responsive: 'lg' },
+  { key: 'base',      label: 'Asosiy',     responsive: 'md' },
+  { key: 'bonus',     label: 'Bonus',      responsive: 'md' },
+  { key: 'deduction', label: 'Jarima',     responsive: 'md' },
   { key: 'net',       label: 'Sof maosh' },
   { key: 'status',    label: 'Holat' },
-  { key: 'actions',   label: '',          align: 'right' as const },
+  { key: 'actions',   label: '',           align: 'right' as const },
 ]
 
 const monthColumns = [
@@ -597,6 +652,21 @@ async function applyFilter() {
             <p class="text-xs text-gray-400">{{ row.employee?.position ?? '—' }}</p>
           </div>
         </template>
+        <template #cell-earned="{ row }">
+          <div
+            class="cursor-pointer group"
+            :title="`Kunlik daromad — ${row.employee?.full_name ?? ''}`"
+            @click="openDailyModal(row.employee_id, row.employee?.full_name ?? `#${row.employee_id}`)"
+          >
+            <div class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary-500 flex items-center gap-0.5">
+              <component :is="TrendingUp" class="w-3 h-3" />
+              Bugun topgan
+            </div>
+            <div class="text-sm font-mono font-semibold text-primary-600 dark:text-primary-400 group-hover:underline">
+              —
+            </div>
+          </div>
+        </template>
         <template #cell-base="{ row }">
           <span class="text-sm font-mono text-gray-600 dark:text-gray-300">
             {{ formatMoney(Number(row.base_salary)) }}
@@ -622,6 +692,13 @@ async function applyFilter() {
         </template>
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-end gap-1">
+            <button
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-primary-500 transition-colors"
+              title="Kunlik daromad"
+              @click="openDailyModal(row.employee_id, row.employee?.full_name ?? `#${row.employee_id}`)"
+            >
+              <component :is="TrendingUp" class="w-3.5 h-3.5" />
+            </button>
             <button
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-primary-500 transition-colors"
               title="Tafsilot"
@@ -862,6 +939,86 @@ async function applyFilter() {
     </div>
     <template #footer>
       <AppButton variant="ghost" @click="showDetail = false">Yopish</AppButton>
+    </template>
+  </AppModal>
+
+  <!-- ── Daily Earnings Modal ── -->
+  <AppModal v-model="showDaily" :title="`Kunlik daromad — ${dailyEmpName}`" size="lg">
+    <div v-if="dailyLoading" class="flex justify-center py-10">
+      <SkeletonLoader />
+    </div>
+    <div v-else-if="dailyData">
+      <!-- Summary cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
+          <div class="text-xs text-gray-500 dark:text-gray-400">Soatlik stavka</div>
+          <div class="text-base font-bold text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+            {{ formatMoney(dailyData.hourly_rate) }}
+          </div>
+        </div>
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center">
+          <div class="text-xs text-gray-500 dark:text-gray-400">Bugun topgan</div>
+          <div class="text-base font-bold text-green-600 dark:text-green-400 font-mono mt-0.5">
+            {{ formatMoney(dailyData.today_earned) }}
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5">{{ dailyData.today_hours.toFixed(1) }} soat</div>
+        </div>
+        <div class="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3 text-center">
+          <div class="text-xs text-gray-500 dark:text-gray-400">Oyda topgan</div>
+          <div class="text-base font-bold text-primary-600 dark:text-primary-400 font-mono mt-0.5">
+            {{ formatMoney(dailyData.total_earned) }}
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5">{{ dailyData.total_hours.toFixed(1) }} soat</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-3 text-center">
+          <div class="text-xs text-gray-500 dark:text-gray-400">Asosiy maosh</div>
+          <div class="text-base font-bold text-gray-700 dark:text-gray-300 font-mono mt-0.5">
+            {{ formatMoney(dailyData.base_salary) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Days table -->
+      <div class="overflow-auto max-h-80 rounded-xl border border-gray-100 dark:border-gray-700">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
+            <tr>
+              <th class="text-left px-3 py-2 text-xs font-medium text-gray-500">Sana</th>
+              <th class="text-left px-3 py-2 text-xs font-medium text-gray-500">Holat</th>
+              <th class="text-right px-3 py-2 text-xs font-medium text-gray-500">Soat</th>
+              <th class="text-right px-3 py-2 text-xs font-medium text-gray-500">Topgan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+            <tr
+              v-for="d in dailyData.days"
+              :key="d.date"
+              :class="[
+                d.is_off ? 'bg-gray-50/50 dark:bg-gray-800/30' : '',
+                d.status === 'active' ? 'bg-blue-50/50 dark:bg-blue-900/10' : '',
+              ]"
+            >
+              <td class="px-3 py-2 font-mono text-gray-700 dark:text-gray-300">
+                {{ d.day }}-{{ MONTHS[filterMonth - 1]?.slice(0,3) }}
+              </td>
+              <td class="px-3 py-2">
+                <span :class="STATUS_LABEL[d.status]?.cls ?? 'text-gray-400'" class="text-xs">
+                  {{ STATUS_LABEL[d.status]?.label ?? d.status }}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-right font-mono text-gray-600 dark:text-gray-400">
+                {{ d.worked_hours > 0 ? d.worked_hours.toFixed(1) : '—' }}
+              </td>
+              <td class="px-3 py-2 text-right font-mono font-medium" :class="d.earned > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+                {{ d.earned > 0 ? formatMoney(d.earned) : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <template #footer>
+      <AppButton variant="ghost" @click="showDaily = false">Yopish</AppButton>
     </template>
   </AppModal>
 </template>
