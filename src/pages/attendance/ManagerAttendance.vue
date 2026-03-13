@@ -40,6 +40,48 @@ async function fetchEmployees() {
   } catch { /* silent */ }
 }
 
+// ── Masofa hisoblash ──────────────────────────────────────────────────────
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R    = 6371000
+  const phi1 = (lat1 * Math.PI) / 180
+  const phi2 = (lat2 * Math.PI) / 180
+  const dphi = ((lat2 - lat1) * Math.PI) / 180
+  const dlam = ((lon2 - lon1) * Math.PI) / 180
+  const a    = Math.sin(dphi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dlam / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+
+interface DistanceInfo {
+  meters: number
+  inside: boolean
+  radius: number
+  label: string   // "Ofis qamrovida" | "312 m uzoqda"
+}
+
+function calcDistance(rec: AttendanceOut, locType: 'in' | 'out'): DistanceInfo | null {
+  const loc = locType === 'in' ? rec.check_in_location : rec.check_out_location
+  if (!loc || (loc.latitude === 0 && loc.longitude === 0)) return null
+
+  // Branch ni employees yoki branches listidan topamiz
+  const branchId = rec.employee?.branch_id
+  if (!branchId) return null
+
+  const branch = branches.value.find(b => b.id === branchId)
+  if (!branch?.latitude || !branch?.longitude) return null
+
+  const meters = haversineMeters(
+    loc.latitude, loc.longitude,
+    Number(branch.latitude), Number(branch.longitude),
+  )
+  const radius = branch.radius_meters ?? 200
+  const inside = meters <= radius
+  const label  = inside
+    ? `Ofis qamrovida`
+    : `${Math.round(meters)} m uzoqda`
+
+  return { meters: Math.round(meters), inside, radius, label }
+}
+
 // ── Tabs ──────────────────────────────────────────────────────────────────
 type Tab = 'today' | 'history' | 'summary'
 const activeTab = ref<Tab>('today')
@@ -88,6 +130,10 @@ async function fetchToday() {
 // ── DETAIL MODAL ──────────────────────────────────────────────────────────
 const showDetail = ref(false)
 const detailRec  = ref<AttendanceOut | null>(null)
+
+// Detail modal uchun oldindan hisoblangan masofalar
+const detailDistIn  = computed(() => detailRec.value ? calcDistance(detailRec.value, 'in')  : null)
+const detailDistOut = computed(() => detailRec.value ? calcDistance(detailRec.value, 'out') : null)
 
 function openDetail(rec: AttendanceOut) {
   detailRec.value  = rec
@@ -398,6 +444,21 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
               <component :is="Clock" class="w-3 h-3" />
               <span>{{ rec.late_minutes }} daqiqa kechikdi</span>
             </div>
+
+            <!-- ── Masofa badge (karta) ── -->
+            <template v-if="rec.source === 'telegram'">
+              <div
+                v-if="calcDistance(rec, 'in') as DistanceInfo | null"
+                class="mt-2 flex items-center gap-1.5 text-xs rounded-lg px-2 py-1"
+                :class="calcDistance(rec, 'in')!.inside
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'"
+              >
+                <component :is="MapPin" class="w-3 h-3 shrink-0" />
+                <span>{{ calcDistance(rec, 'in')!.label }}</span>
+              </div>
+            </template>
+
             <div class="mt-2">
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {{ rec.source === 'telegram' ? '🤖 Telegram' : rec.source === 'manual' ? '✍️ Qo\'l' : rec.source }}
@@ -653,21 +714,35 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           />
         </div>
 
-        <!-- Kelish koordinatasi -->
+        <!-- Kelish joylashuvi + masofa -->
         <div v-if="detailRec.check_in_location">
           <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <component :is="MapPin" class="w-3.5 h-3.5" /> Kelish joylashuvi
           </p>
+
+          <!-- Masofa badge (modal) -->
+          <div
+            v-if="detailDistIn"
+            class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium mb-2"
+            :class="detailDistIn.inside
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800/30'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/30'"
+          >
+            <component :is="MapPin" class="w-4 h-4 shrink-0" />
+            <span>{{ detailDistIn.inside ? '✅' : '⚠️' }} {{ detailDistIn.label }}</span>
+            <span class="text-xs opacity-60 ml-auto">(radius: {{ detailDistIn.radius }} m)</span>
+          </div>
+
           <div v-if="hasValidCoords(detailRec.check_in_location)">
             <a
-              :href="locationUrl(detailRec.check_in_location.latitude, detailRec.check_in_location.longitude)"
+              :href="locationUrl(detailRec.check_in_location!.latitude, detailRec.check_in_location!.longitude)"
               target="_blank"
               class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
             >
               <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
-                  {{ detailRec.check_in_location.latitude }}, {{ detailRec.check_in_location.longitude }}
+                  {{ detailRec.check_in_location!.latitude }}, {{ detailRec.check_in_location!.longitude }}
                 </p>
                 <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
               </div>
@@ -676,21 +751,35 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           <p v-else class="text-sm text-gray-400">Koordinata aniqlanmadi (0, 0)</p>
         </div>
 
-        <!-- Ketish koordinatasi -->
+        <!-- Ketish joylashuvi + masofa -->
         <div v-if="detailRec.check_out_location">
           <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <component :is="MapPin" class="w-3.5 h-3.5" /> Ketish joylashuvi
           </p>
+
+          <!-- Masofa badge (modal) -->
+          <div
+            v-if="detailDistOut"
+            class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium mb-2"
+            :class="detailDistOut.inside
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800/30'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/30'"
+          >
+            <component :is="MapPin" class="w-4 h-4 shrink-0" />
+            <span>{{ detailDistOut.inside ? '✅' : '⚠️' }} {{ detailDistOut.label }}</span>
+            <span class="text-xs opacity-60 ml-auto">(radius: {{ detailDistOut.radius }} m)</span>
+          </div>
+
           <div v-if="hasValidCoords(detailRec.check_out_location)">
             <a
-              :href="locationUrl(detailRec.check_out_location.latitude, detailRec.check_out_location.longitude)"
+              :href="locationUrl(detailRec.check_out_location!.latitude, detailRec.check_out_location!.longitude)"
               target="_blank"
               class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
             >
               <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
-                  {{ detailRec.check_out_location.latitude }}, {{ detailRec.check_out_location.longitude }}
+                  {{ detailRec.check_out_location!.latitude }}, {{ detailRec.check_out_location!.longitude }}
                 </p>
                 <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
               </div>
