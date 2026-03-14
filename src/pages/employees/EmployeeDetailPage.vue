@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, User, Clock, DollarSign, Gift, BarChart2, Camera, Zap } from 'lucide-vue-next'
+import { ArrowLeft, User, Clock, DollarSign, Gift, BarChart2, Camera } from 'lucide-vue-next'
 import { useEmployeeStore } from '@/stores/employees'
 import { useToastStore } from '@/stores/toast'
 import { usePermission } from '@/composables/usePermission'
@@ -23,7 +23,8 @@ const store   = useEmployeeStore()
 const toast   = useToastStore()
 const { can } = usePermission()
 
-const id       = Number(route.params.id)
+const id = Number(route.params.id)
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 type Tab = 'general' | 'attendance' | 'salary' | 'bonus' | 'kpi'
@@ -38,12 +39,12 @@ const allTabs: { key: Tab; label: string; icon: any; perm?: string }[] = [
 ]
 const tabs = computed(() => allTabs.filter(t => !t.perm || can.value(t.perm as any)))
 
-const pageLoading = ref(true)
-const saving      = ref(false)
-const uploading   = ref(false)
-const branches    = ref<BranchOut[]>([])
-const departments = ref<DepartmentOut[]>([])
-const photoInput  = ref<HTMLInputElement | null>(null)
+const pageLoading  = ref(true)
+const saving       = ref(false)
+const uploading    = ref(false)
+const branches     = ref<BranchOut[]>([])
+const departments  = ref<DepartmentOut[]>([])
+const photoInput   = ref<HTMLInputElement | null>(null)
 
 async function onSave(payload: EmployeeUpdate) {
   saving.value = true
@@ -106,38 +107,32 @@ const effectiveHourlyRate = computed(() => {
   const e = employee.value
   if (!e) return 0
   if (e.hourly_rate) return Number(e.hourly_rate)
-  return Math.round(Number(e.base_salary) / ((e.work_hours_per_day ?? 8) * 22))
+  return Number(e.base_salary) / ((e.work_hours_per_day ?? 8) * 22)
 })
-
-const SHORT_LABELS: Record<string, string> = {
-  monday: 'Du', tuesday: 'Se', wednesday: 'Ch',
-  thursday: 'Pa', friday: 'Ju', saturday: 'Sh', sunday: 'Ya',
-}
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-5">
 
-    <!-- ── Back ───────────────────────────────────────────────────── -->
+    <!-- Back -->
     <div class="flex items-center gap-3">
       <button
-        class="p-2 rounded-xl bg-[#1a1d27] border border-[#2d3148] hover:border-indigo-500/40 hover:bg-indigo-500/10 transition-all"
+        class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         @click="router.push('/employees')"
       >
-        <ArrowLeft class="w-4 h-4 text-gray-400" />
+        <component :is="ArrowLeft" class="w-5 h-5 text-gray-500" />
       </button>
-      <h1 class="text-lg font-bold text-gray-100">Xodim profili</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Xodim profili</h1>
     </div>
 
-    <!-- ── Skeleton ───────────────────────────────────────────────── -->
+    <!-- Skeleton -->
     <template v-if="pageLoading">
-      <div class="bg-[#1a1d27] rounded-2xl border border-[#2d3148] p-6 animate-pulse">
+      <div class="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 animate-pulse">
         <div class="flex items-center gap-4">
-          <div class="w-20 h-20 rounded-2xl bg-[#2d3148]" />
-          <div class="space-y-2 flex-1">
-            <div class="h-4 w-40 bg-[#2d3148] rounded-lg" />
-            <div class="h-3 w-24 bg-[#2d3148] rounded-lg" />
-            <div class="h-3 w-32 bg-[#2d3148] rounded-lg" />
+          <div class="w-20 h-20 rounded-2xl bg-gray-200 dark:bg-gray-700" />
+          <div class="space-y-2">
+            <div class="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
           </div>
         </div>
       </div>
@@ -145,116 +140,109 @@ const SHORT_LABELS: Record<string, string> = {
 
     <template v-else-if="employee">
 
-      <!-- ── Profile card ───────────────────────────────────────────── -->
-      <div class="bg-[#1a1d27] rounded-2xl border border-[#2d3148] overflow-hidden">
+      <!-- Profile card -->
+      <div class="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+        <div class="flex items-start gap-5">
 
-        <!-- Gradient header strip -->
-        <div class="h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
-
-        <div class="p-5">
-          <div class="flex items-start gap-4">
-
-            <!-- Avatar -->
-            <div class="relative shrink-0 group">
-              <div class="w-[72px] h-[72px] rounded-2xl overflow-hidden bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                <img v-if="photoUrl" :src="photoUrl" class="w-full h-full object-cover" alt="photo" />
-                <span v-else class="text-indigo-400 text-xl font-bold tracking-tight">{{ initials }}</span>
-              </div>
-              <button v-if="can('employees')"
-                class="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                :disabled="uploading"
-                @click="photoInput?.click()"
-              >
-                <Camera class="w-5 h-5 text-white" />
-              </button>
-              <input ref="photoInput" type="file" accept="image/*" class="hidden" @change="uploadPhoto" />
-              <!-- Active indicator -->
-              <div :class="['absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#1a1d27]',
-                employee.is_active ? 'bg-emerald-500' : 'bg-gray-600']" />
+          <!-- Avatar -->
+          <div class="relative shrink-0 group">
+            <div class="w-20 h-20 rounded-2xl overflow-hidden bg-primary-500/10 flex items-center justify-center">
+              <img v-if="photoUrl" :src="photoUrl" class="w-full h-full object-cover" alt="photo" />
+              <span v-else class="text-primary-500 text-2xl font-bold">{{ initials }}</span>
             </div>
-
-            <!-- Info -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <div>
-                  <h2 class="text-base font-bold text-gray-100 leading-tight">{{ employee.full_name }}</h2>
-                  <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ employee.phone }}</p>
-                </div>
-                <AppBadge :variant="employee.is_active ? 'active' : 'inactive'" size="sm" class="shrink-0" />
-              </div>
-
-              <div class="flex flex-wrap gap-1.5 mt-2">
-                <span v-if="employee.position"
-                  class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-[#0f1117] text-gray-400 border border-[#2d3148]">
-                  {{ employee.position }}
-                </span>
-                <span v-if="employee.branch?.name"
-                  class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  {{ employee.branch.name }}
-                </span>
-                <span v-if="employee.department?.name"
-                  class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-[#0f1117] text-gray-500 border border-[#2d3148]">
-                  {{ employee.department.name }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick stats row -->
-          <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-[#2d3148]">
-            <div class="text-center">
-              <p class="text-[10px] text-gray-600 uppercase tracking-widest mb-0.5">Maosh</p>
-              <p class="text-xs font-bold text-gray-200">{{ formatMoney(Number(employee.base_salary)) }}</p>
-            </div>
-            <div class="text-center">
-              <p class="text-[10px] text-gray-600 uppercase tracking-widest mb-0.5">Soatlik</p>
-              <p class="text-xs font-bold text-gray-200">
-                {{ formatMoney(effectiveHourlyRate) }}
-                <span v-if="!employee.hourly_rate" class="text-gray-600 font-normal"> •</span>
-              </p>
-            </div>
-            <div class="text-center">
-              <p class="text-[10px] text-gray-600 uppercase tracking-widest mb-0.5">Ish soat</p>
-              <p class="text-xs font-bold text-gray-200">{{ employee.work_hours_per_day ?? 8 }}h</p>
-            </div>
-            <div class="text-center">
-              <p class="text-[10px] text-gray-600 uppercase tracking-widest mb-0.5">Kirgan</p>
-              <p class="text-xs font-bold text-gray-200">{{ employee.hire_date ? formatDate(employee.hire_date) : '—' }}</p>
-            </div>
-          </div>
-
-          <!-- Dam olish kunlari mini -->
-          <div class="flex gap-1.5 mt-3">
-            <div v-for="day in ALL_WEEK_DAYS" :key="day"
-              :class="['flex-1 text-center py-1.5 rounded-lg text-[10px] font-bold transition-all',
-                (employee.off_days ?? []).includes(day)
-                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                  : 'bg-[#0f1117] text-gray-700 border border-[#2d3148]']"
+            <button v-if="can('employees')"
+              class="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              :disabled="uploading"
+              @click="photoInput?.click()"
             >
-              {{ SHORT_LABELS[day] }}
+              <component :is="Camera" class="w-5 h-5 text-white" />
+            </button>
+            <input ref="photoInput" type="file" accept="image/*" class="hidden" @change="uploadPhoto" />
+            <!-- Online dot -->
+            <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#1a1d27]"
+              :class="employee.is_active ? 'bg-emerald-500' : 'bg-gray-400'" />
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ employee.full_name }}</h2>
+                <p class="text-sm text-gray-400 mt-0.5">{{ employee.phone }}</p>
+              </div>
+              <AppBadge :variant="employee.is_active ? 'active' : 'inactive'" size="sm" class="shrink-0" />
             </div>
+
+            <div class="flex flex-wrap items-center gap-2 mt-2">
+              <span v-if="employee.position"
+                class="text-xs font-medium px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                {{ employee.position }}
+              </span>
+              <span v-if="employee.branch?.name"
+                class="text-xs font-medium px-2 py-0.5 rounded-lg bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
+                {{ employee.branch.name }}
+              </span>
+              <span v-if="employee.department?.name"
+                class="text-xs font-medium px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                {{ employee.department.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Asosiy maosh</p>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ formatMoney(Number(employee.base_salary)) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Soatlik stavka</p>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {{ formatMoney(Math.round(effectiveHourlyRate)) }}
+              <span class="text-xs font-normal text-gray-400">{{ employee.hourly_rate ? '' : '(auto)' }}</span>
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Ish soati</p>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ employee.work_hours_per_day ?? 8 }} soat/kun</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Ishga kirgan</p>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ employee.hire_date ? formatDate(employee.hire_date) : '—' }}</p>
+          </div>
+        </div>
+
+        <!-- Dam olish kunlari -->
+        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <p class="text-xs text-gray-400 uppercase tracking-wide mb-2">Dam olish kunlari</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="day in ALL_WEEK_DAYS" :key="day"
+              :class="['px-2.5 py-1 text-xs rounded-lg font-medium transition-colors',
+                (employee.off_days ?? []).includes(day)
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400']">
+              {{ WEEK_DAY_LABELS[day] }}
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- ── Tabs ───────────────────────────────────────────────────── -->
-      <div class="bg-[#1a1d27] rounded-2xl border border-[#2d3148] overflow-hidden">
-
-        <!-- Tab bar -->
-        <div class="flex border-b border-[#2d3148] overflow-x-auto">
+      <!-- Tabs -->
+      <div class="bg-white dark:bg-[#1a1d27] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
           <button v-for="tab in tabs" :key="tab.key"
-            :class="['flex items-center gap-2 px-4 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all',
+            :class="['flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
               activeTab === tab.key
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/5'
-                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-[#0f1117]']"
+                ? 'border-primary-500 text-primary-500'
+                : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300']"
             @click="activeTab = tab.key"
           >
-            <component :is="tab.icon" class="w-3.5 h-3.5" />
+            <component :is="tab.icon" class="w-4 h-4" />
             {{ tab.label }}
           </button>
         </div>
 
-        <!-- Tab content -->
         <div class="p-5">
           <GeneralTab
             v-if="activeTab === 'general'"
