@@ -6,7 +6,7 @@ import { ref, computed, onMounted } from 'vue'
 import {
   Plus, Filter, RefreshCw, Clock, CheckCircle2,
   XCircle, AlertCircle, Users, Building2, LogIn, LogOut,
-  MapPin, Camera,
+  MapPin, Camera, Edit2, Trash2,
 } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -17,7 +17,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import api from '@/composables/useApi'
 import { useToastStore } from '@/stores/toast'
-import { formatDate, formatTime, formatDistance, todayISO, currentYearMonth } from '@/utils/format'
+import { formatDate, formatTime, todayISO, currentYearMonth } from '@/utils/format'
 import type { AttendanceOut, AttendanceSummary, AttendanceStatus, BranchOut, EmployeeOut } from '@/types'
 
 const toast = useToastStore()
@@ -38,48 +38,6 @@ async function fetchEmployees() {
     const { data } = await api.get('/api/employees', { params: { size: 100, is_active: true } })
     employees.value = data.items ?? []
   } catch { /* silent */ }
-}
-
-// ── Masofa hisoblash ──────────────────────────────────────────────────────
-function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R    = 6371000
-  const phi1 = (lat1 * Math.PI) / 180
-  const phi2 = (lat2 * Math.PI) / 180
-  const dphi = ((lat2 - lat1) * Math.PI) / 180
-  const dlam = ((lon2 - lon1) * Math.PI) / 180
-  const a    = Math.sin(dphi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dlam / 2) ** 2
-  return 2 * R * Math.asin(Math.sqrt(a))
-}
-
-interface DistanceInfo {
-  meters: number
-  inside: boolean
-  radius: number
-  label: string   // "Ofis qamrovida" | "312 m uzoqda"
-}
-
-function calcDistance(rec: AttendanceOut, locType: 'in' | 'out'): DistanceInfo | null {
-  const loc = locType === 'in' ? rec.check_in_location : rec.check_out_location
-  if (!loc || (loc.latitude === 0 && loc.longitude === 0)) return null
-
-  // Branch ni employees yoki branches listidan topamiz
-  const branchId = rec.employee?.branch_id
-  if (!branchId) return null
-
-  const branch = branches.value.find(b => b.id === branchId)
-  if (!branch?.latitude || !branch?.longitude) return null
-
-  const meters = haversineMeters(
-    loc.latitude, loc.longitude,
-    Number(branch.latitude), Number(branch.longitude),
-  )
-  const radius = branch.radius_meters ?? 200
-  const inside = meters <= radius
-  const label  = inside
-    ? `Ofis qamrovida`
-    : `${formatDistance(meters)} uzoqda`
-
-  return { meters: Math.round(meters), inside, radius, label }
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -131,13 +89,55 @@ async function fetchToday() {
 const showDetail = ref(false)
 const detailRec  = ref<AttendanceOut | null>(null)
 
-// Detail modal uchun oldindan hisoblangan masofalar
-const detailDistIn  = computed(() => detailRec.value ? calcDistance(detailRec.value, 'in')  : null)
-const detailDistOut = computed(() => detailRec.value ? calcDistance(detailRec.value, 'out') : null)
-
 function openDetail(rec: AttendanceOut) {
   detailRec.value  = rec
   showDetail.value = true
+}
+
+// ── EDIT MODAL ────────────────────────────────────────────────────────────
+const showEdit  = ref(false)
+const editSaving = ref(false)
+const editForm  = ref({
+  check_in_time:  '',
+  check_out_time: '',
+  status:         'present' as AttendanceStatus,
+  notes:          '',
+  late_minutes:   0,
+})
+
+function openEdit(rec: AttendanceOut) {
+  editForm.value = {
+    check_in_time:  rec.check_in_time  ? formatTime(rec.check_in_time)  : '',
+    check_out_time: rec.check_out_time ? formatTime(rec.check_out_time) : '',
+    status:         rec.status,
+    notes:          rec.notes ?? '',
+    late_minutes:   rec.late_minutes ?? 0,
+  }
+  showEdit.value = true
+}
+
+async function saveEdit() {
+  if (!detailRec.value) return
+  editSaving.value = true
+  try {
+    const payload: any = {
+      status:       editForm.value.status,
+      late_minutes: editForm.value.late_minutes,
+    }
+    if (editForm.value.check_in_time)  payload.check_in_time  = `${editForm.value.check_in_time}:00`
+    if (editForm.value.check_out_time) payload.check_out_time = `${editForm.value.check_out_time}:00`
+    if (editForm.value.notes)          payload.notes          = editForm.value.notes
+    await api.patch(`/api/attendance/${detailRec.value.id}`, payload)
+    toast.success('Davomat yangilandi')
+    showEdit.value   = false
+    showDetail.value = false
+    fetchToday()
+    if (activeTab.value === 'history') fetchHistory()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.detail ?? 'Xato yuz berdi')
+  } finally {
+    editSaving.value = false
+  }
 }
 
 function photoUrl(path: string | null | undefined): string | null {
@@ -287,6 +287,7 @@ const historyColumns = [
   { key: 'check_out', label: 'Ketish' },
   { key: 'late',      label: 'Kechikish' },
   { key: 'status',    label: 'Holat' },
+  { key: 'actions',   label: '', align: 'right' as const },
 ]
 
 const statusBg: Record<string, string> = {
@@ -444,21 +445,6 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
               <component :is="Clock" class="w-3 h-3" />
               <span>{{ rec.late_minutes }} daqiqa kechikdi</span>
             </div>
-
-            <!-- ── Masofa badge (karta) ── -->
-            <template v-if="rec.source === 'telegram'">
-              <div
-                v-if="calcDistance(rec, 'in') as DistanceInfo | null"
-                class="mt-2 flex items-center gap-1.5 text-xs rounded-lg px-2 py-1"
-                :class="calcDistance(rec, 'in')!.inside
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'"
-              >
-                <component :is="MapPin" class="w-3 h-3 shrink-0" />
-                <span>{{ calcDistance(rec, 'in')!.label }}</span>
-              </div>
-            </template>
-
             <div class="mt-2">
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {{ rec.source === 'telegram' ? '🤖 Telegram' : rec.source === 'manual' ? '✍️ Qo\'l' : rec.source }}
@@ -537,6 +523,15 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           </template>
           <template #cell-status="{ row }">
             <AppBadge :variant="row.status" />
+          </template>
+          <template #cell-actions="{ row }">
+            <button
+              class="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+              :title="'Tahrirlash'"
+              @click="detailRec = row; openEdit(row)"
+            >
+              <component :is="Edit2" class="w-4 h-4" />
+            </button>
           </template>
         </AppTable>
 
@@ -714,35 +709,21 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           />
         </div>
 
-        <!-- Kelish joylashuvi + masofa -->
+        <!-- Kelish koordinatasi -->
         <div v-if="detailRec.check_in_location">
           <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <component :is="MapPin" class="w-3.5 h-3.5" /> Kelish joylashuvi
           </p>
-
-          <!-- Masofa badge (modal) -->
-          <div
-            v-if="detailDistIn"
-            class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium mb-2"
-            :class="detailDistIn.inside
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800/30'
-              : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/30'"
-          >
-            <component :is="MapPin" class="w-4 h-4 shrink-0" />
-            <span>{{ detailDistIn.inside ? '✅' : '⚠️' }} {{ detailDistIn.label }}</span>
-            <span class="text-xs opacity-60 ml-auto">(radius: {{ detailDistIn.radius }} m)</span>
-          </div>
-
           <div v-if="hasValidCoords(detailRec.check_in_location)">
             <a
-              :href="locationUrl(detailRec.check_in_location!.latitude, detailRec.check_in_location!.longitude)"
+              :href="locationUrl(detailRec.check_in_location.latitude, detailRec.check_in_location.longitude)"
               target="_blank"
               class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
             >
               <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
-                  {{ detailRec.check_in_location!.latitude }}, {{ detailRec.check_in_location!.longitude }}
+                  {{ detailRec.check_in_location.latitude }}, {{ detailRec.check_in_location.longitude }}
                 </p>
                 <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
               </div>
@@ -751,35 +732,21 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
           <p v-else class="text-sm text-gray-400">Koordinata aniqlanmadi (0, 0)</p>
         </div>
 
-        <!-- Ketish joylashuvi + masofa -->
+        <!-- Ketish koordinatasi -->
         <div v-if="detailRec.check_out_location">
           <p class="text-[11px] text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <component :is="MapPin" class="w-3.5 h-3.5" /> Ketish joylashuvi
           </p>
-
-          <!-- Masofa badge (modal) -->
-          <div
-            v-if="detailDistOut"
-            class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium mb-2"
-            :class="detailDistOut.inside
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800/30'
-              : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/30'"
-          >
-            <component :is="MapPin" class="w-4 h-4 shrink-0" />
-            <span>{{ detailDistOut.inside ? '✅' : '⚠️' }} {{ detailDistOut.label }}</span>
-            <span class="text-xs opacity-60 ml-auto">(radius: {{ detailDistOut.radius }} m)</span>
-          </div>
-
           <div v-if="hasValidCoords(detailRec.check_out_location)">
             <a
-              :href="locationUrl(detailRec.check_out_location!.latitude, detailRec.check_out_location!.longitude)"
+              :href="locationUrl(detailRec.check_out_location.latitude, detailRec.check_out_location.longitude)"
               target="_blank"
               class="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 transition-colors"
             >
               <component :is="MapPin" class="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p class="text-xs font-mono text-blue-700 dark:text-blue-400">
-                  {{ detailRec.check_out_location!.latitude }}, {{ detailRec.check_out_location!.longitude }}
+                  {{ detailRec.check_out_location.latitude }}, {{ detailRec.check_out_location.longitude }}
                 </p>
                 <p class="text-[11px] text-blue-500 mt-0.5">Google Maps da ochish →</p>
               </div>
@@ -796,6 +763,74 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
       </div>
       <template #footer>
         <AppButton variant="ghost" @click="showDetail = false">Yopish</AppButton>
+        <AppButton variant="primary" @click="openEdit(detailRec!)">
+          <component :is="Edit2" class="w-4 h-4" />
+          Tahrirlash
+        </AppButton>
+      </template>
+    </AppModal>
+
+    <!-- ── Edit Modal ──────────────────────────────────────────────────── -->
+    <AppModal v-model="showEdit" title="Davomatni tahrirlash" size="md">
+      <div v-if="detailRec" class="space-y-4">
+
+        <!-- Xodim info (readonly) -->
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <div class="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center shrink-0">
+            <component :is="Users" class="w-4 h-4 text-primary-500" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ detailRec.employee?.full_name ?? `#${detailRec.employee_id}` }}</p>
+            <p class="text-xs text-gray-400">{{ formatDate(detailRec.date) }} · {{ detailRec.source === 'telegram' ? '🤖 Telegram' : '✍️ Qo\'lda' }}</p>
+          </div>
+        </div>
+
+        <!-- Holat -->
+        <div>
+          <label class="block text-[11px] text-gray-400 uppercase tracking-wide mb-2">Holat</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              v-for="s in (['present', 'late', 'absent', 'half_day'] as const)" :key="s"
+              type="button"
+              :class="[
+                'py-2.5 rounded-xl text-sm font-medium border transition-all flex items-center justify-center',
+                editForm.status === s
+                  ? 'ring-2 ring-primary-500 ring-offset-1 border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300',
+              ]"
+              @click="editForm.status = s"
+            >
+              <AppBadge :variant="s" :dot="true" size="sm" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Vaqtlar -->
+        <div class="grid grid-cols-2 gap-3">
+          <AppInput v-model="editForm.check_in_time"  label="Kelish vaqti"  type="time" />
+          <AppInput v-model="editForm.check_out_time" label="Ketish vaqti"  type="time" />
+        </div>
+
+        <!-- Kechikish -->
+        <div>
+          <label class="block text-[11px] text-gray-400 uppercase tracking-wide mb-1">Kechikish (daqiqa)</label>
+          <input
+            v-model.number="editForm.late_minutes"
+            type="number" min="0" max="999"
+            class="w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary-500"
+          />
+        </div>
+
+        <!-- Izoh -->
+        <AppInput v-model="editForm.notes" label="Izoh" placeholder="Ixtiyoriy..." :maxlength="200" />
+      </div>
+
+      <template #footer>
+        <AppButton variant="ghost" @click="showEdit = false">Bekor qilish</AppButton>
+        <AppButton variant="primary" :loading="editSaving" @click="saveEdit">
+          <component :is="Edit2" class="w-4 h-4" />
+          Saqlash
+        </AppButton>
       </template>
     </AppModal>
 
