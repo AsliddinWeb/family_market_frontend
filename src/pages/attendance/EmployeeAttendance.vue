@@ -128,12 +128,9 @@ async function confirmCheckin() {
   capturePhoto() // foto olinadi, hozircha backend ga yuborilmaydi
   closeCamera()
   try {
-    const { data } = await api.post('/api/attendance', {
+    const { data } = await api.post('/api/attendance/check-in', {
       employee_id:       auth.user?.employee_id,
-      date:              todayISO(),
       check_in_time:     new Date().toTimeString().slice(0, 8),
-      status:            'present',
-      source:            'manual',
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
@@ -169,7 +166,8 @@ async function confirmCheckout() {
   capturePhoto()
   closeCamera()
   try {
-    const { data } = await api.patch(`/api/attendance/${todayAtt.value!.id}`, {
+    const { data } = await api.post('/api/attendance/check-out', {
+      employee_id:        auth.user?.employee_id,
       check_out_time:     new Date().toTimeString().slice(0, 8),
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
