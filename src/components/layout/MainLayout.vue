@@ -2,6 +2,7 @@
 import Sidebar from './Sidebar.vue'
 import Topbar from './Topbar.vue'
 import MobileDrawer from './MobileDrawer.vue'
+import EmployeeBottomNav from './EmployeeBottomNav.vue'
 import AppToast from '@/components/ui/AppToast.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 </script>
@@ -36,8 +37,11 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
       </main>
     </div>
 
-    <!-- Mobile Drawer -->
+    <!-- Mobile Drawer (non-employee) -->
     <MobileDrawer />
+
+    <!-- Employee Bottom Nav (mobile only) -->
+    <EmployeeBottomNav />
 
     <!-- Global -->
     <AppToast />
