@@ -24,6 +24,7 @@ const todayAtt     = ref<any | null>(null)
 const mySalary     = ref<any | null>(null)
 const presentCount = ref(0)
 const lateCount    = ref(0)
+const myEmployeeId = ref<number | null>(auth.user?.employee_id ?? null)
 
 // ── Check-in/out ────────────────────────────────────────────────────────────
 const checkinLoading = ref(false)
@@ -57,6 +58,14 @@ const netSalary = computed(() => {
 
 // ── Load ────────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  // employee_id token da yo'q bo'lsa /employees/me dan olamiz
+  if (!myEmployeeId.value) {
+    try {
+      const { data: me } = await api.get('/api/employees/me')
+      myEmployeeId.value = me.id
+    } catch { /* silent */ }
+  }
+
   const [att, leaves, salary] = await Promise.allSettled([
     api.get('/api/attendance', { params: { page: 1, size: 20 } }),
     api.get('/api/leaves',    { params: { page: 1, size: 5  } }),
@@ -152,7 +161,7 @@ async function confirmCheckin() {
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-in', {
-      employee_id:       auth.user?.employee_id,
+      employee_id:       myEmployeeId.value,
       check_in_time:     new Date().toTimeString().slice(0, 8),
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
@@ -190,7 +199,7 @@ async function confirmCheckout() {
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-out', {
-      employee_id:        auth.user?.employee_id,
+      employee_id:        myEmployeeId.value,
       check_out_time:     new Date().toTimeString().slice(0, 8),
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }

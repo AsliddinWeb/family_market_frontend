@@ -21,8 +21,9 @@ import { useAuthStore } from '@/stores/auth'
 import { formatDate, formatTime, todayISO, currentYearMonth } from '@/utils/format'
 import type { AttendanceOut, AttendanceSummary, AttendanceStatus } from '@/types'
 
-const toast = useToastStore()
-const auth  = useAuthStore()
+const toast      = useToastStore()
+const auth       = useAuthStore()
+const myEmployeeId = ref<number | null>(auth.user?.employee_id ?? null)
 
 // ── Bugungi davomat ────────────────────────────────────────────────────────
 const todayAtt      = ref<AttendanceOut | null>(null)
@@ -129,7 +130,7 @@ async function confirmCheckin() {
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-in', {
-      employee_id:       auth.user?.employee_id,
+      employee_id:       myEmployeeId.value,
       check_in_time:     new Date().toTimeString().slice(0, 8),
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
@@ -167,7 +168,7 @@ async function confirmCheckout() {
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-out', {
-      employee_id:        auth.user?.employee_id,
+      employee_id:        myEmployeeId.value,
       check_out_time:     new Date().toTimeString().slice(0, 8),
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
@@ -240,7 +241,13 @@ async function fetchSummary() {
   } finally { summaryLoading.value = false }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (!myEmployeeId.value) {
+    try {
+      const { data: me } = await api.get('/api/employees/me')
+      myEmployeeId.value = me.id
+    } catch { /* silent */ }
+  }
   fetchToday()
   fetchHistory()
   fetchSummary()
