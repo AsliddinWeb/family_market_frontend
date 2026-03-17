@@ -170,8 +170,12 @@ export interface EmployeeOut {
   hire_date: string | null
   base_salary: string             // Decimal → string
   hourly_rate: string | null      // yangi — Decimal → string
+  work_start_time: string | null  // yangi
+  work_end_time: string | null    // yangi
   work_hours_per_day: number      // yangi
   off_days: WeekDay[]             // yangi
+  custom_off_days: string[]
+  custom_work_days: string[]
   telegram_user_id: string | null
   photo: string | null
   face_photo: string | null       // yangi — yuz tanish rasmi
@@ -192,6 +196,8 @@ export interface EmployeeCreate {
   hire_date?: string | null
   base_salary?: number
   hourly_rate?: number | null
+  work_start_time?: string | null
+  work_end_time?: string | null
   work_hours_per_day?: number
   off_days?: WeekDay[]
   telegram_user_id?: string | null
@@ -209,6 +215,10 @@ export interface EmployeeUpdate {
   hourly_rate?: number | null
   work_hours_per_day?: number | null
   off_days?: WeekDay[] | null
+  custom_off_days?: string[] | null
+  custom_work_days?: string[] | null
+  work_start_time?: string | null
+  work_end_time?: string | null
   telegram_user_id?: string | null
   photo?: string | null
   face_photo?: string | null

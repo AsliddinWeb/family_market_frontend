@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Send, CheckCircle, XCircle } from 'lucide-vue-next'
 import AppInput from '@/components/ui/AppInput.vue'
 import OffDaysCalendar from './OffDaysCalendar.vue'
@@ -43,6 +43,12 @@ const empTypes: { value: EmploymentType; label: string }[] = [
   { value: 'contract', label: 'Kontrakt'      },
 ]
 
+// "09:00:00" → "09:00"
+function toTimeInput(val: string | null | undefined): string {
+  if (!val) return ''
+  return val.slice(0, 5)
+}
+
 function startEdit() {
   const e = props.employee
   form.value = {
@@ -55,6 +61,8 @@ function startEdit() {
     hire_date:          e.hire_date ?? '',
     base_salary:        Number(e.base_salary),
     hourly_rate:        e.hourly_rate ? Number(e.hourly_rate) : null,
+    work_start_time:    toTimeInput(e.work_start_time) || null,
+    work_end_time:      toTimeInput(e.work_end_time) || null,
     work_hours_per_day: e.work_hours_per_day ?? 8,
     off_days:           [...(e.off_days ?? ['saturday', 'sunday'])],
     custom_off_days:    [...(e.custom_off_days ?? [])],
@@ -86,15 +94,54 @@ function onSave() {
   if (!p.telegram_user_id) delete p.telegram_user_id
   if (!p.position)         delete p.position
   if (!p.hourly_rate)      delete p.hourly_rate
+  // Bo'sh qoldirilsa null yuboriladi — filial vaqtiga qaytish
+  if (!p.work_start_time)  p.work_start_time = null
+  if (!p.work_end_time)    p.work_end_time = null
   emit('save', p)
   editing.value = false
 }
+
+// Kelish/ketish vaqtidan kunlik ish soatini hisoblash
+const computedWorkHours = computed(() => {
+  const start = form.value.work_start_time
+  const end   = form.value.work_end_time
+  if (!start || !end) return null
+  const sp = start.split(':').map(Number)
+  const ep = end.split(':').map(Number)
+  const sh = sp[0] ?? 0, sm = sp[1] ?? 0
+  const eh = ep[0] ?? 0, em = ep[1] ?? 0
+  const totalMins = (eh * 60 + em) - (sh * 60 + sm)
+  if (totalMins <= 0) return null
+  return Math.round(totalMins / 60 * 10) / 10  // 1 decimal
+})
+
+// Vaqt o'zgarganda work_hours_per_day ni auto update
+watch(() => [form.value.work_start_time, form.value.work_end_time], () => {
+  if (computedWorkHours.value !== null) {
+    form.value.work_hours_per_day = Math.round(computedWorkHours.value)
+  }
+})
 
 const effectiveRate = computed(() => {
   const e = props.employee
   if (!e) return 0
   if (e.hourly_rate) return Number(e.hourly_rate)
   return Math.round(Number(e.base_salary) / ((e.work_hours_per_day ?? 8) * 22))
+})
+
+// Ko'rsatish uchun — xodim vaqti yoki filial vaqti
+const displayWorkStart = computed(() => {
+  const e = props.employee
+  if (e.work_start_time) return e.work_start_time.slice(0, 5)
+  const t = (e.branch as any)?.work_start_time
+  return t ? `${t.slice(0, 5)} (filial)` : '—'
+})
+
+const displayWorkEnd = computed(() => {
+  const e = props.employee
+  if (e.work_end_time) return e.work_end_time.slice(0, 5)
+  const t = (e.branch as any)?.work_end_time
+  return t ? `${t.slice(0, 5)} (filial)` : '—'
 })
 </script>
 
@@ -160,6 +207,16 @@ const effectiveRate = computed(() => {
         <div>
           <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Kunlik ish soati</p>
           <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ employee.work_hours_per_day ?? 8 }} soat</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Kelish vaqti</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-200 font-mono">{{ displayWorkStart }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Ketish vaqti</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-200 font-mono">{{ displayWorkEnd }}</p>
         </div>
 
       </div>
@@ -275,9 +332,31 @@ const effectiveRate = computed(() => {
           <input v-model.number="form.hourly_rate" type="number" min="0" placeholder="Bo'sh = auto" :class="sel" />
         </div>
 
+        <!-- Kelish / Ketish vaqti -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kunlik ish soati</label>
-          <input v-model.number="form.work_hours_per_day" type="number" min="1" max="24" :class="sel" />
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Kelish vaqti
+            <span class="text-xs text-gray-400 font-normal">(bo'sh = filial vaqti)</span>
+          </label>
+          <input v-model="form.work_start_time" type="time" :class="sel" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Ketish vaqti
+            <span class="text-xs text-gray-400 font-normal">(bo'sh = filial vaqti)</span>
+          </label>
+          <input v-model="form.work_end_time" type="time" :class="sel" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Kunlik ish soati
+            <span class="text-xs text-gray-400 font-normal">(kelish/ketish vaqtidan auto)</span>
+          </label>
+          <div :class="sel + ' bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-default'">
+            {{ computedWorkHours !== null ? computedWorkHours + ' soat' : (form.work_hours_per_day ?? 8) + ' soat' }}
+          </div>
         </div>
 
         <div>
