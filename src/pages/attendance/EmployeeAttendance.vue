@@ -116,7 +116,7 @@ async function startCheckin() {
   gpsStatus.value = 'loading'
   try {
     try { location.value = await getLocation(); gpsStatus.value = 'ok' }
-    catch { gpsStatus.value = 'fail'; location.value = { lat: 0, lng: 0 } }
+    catch { gpsStatus.value = 'fail'; location.value = null }
     await openCamera('checkin')
   } catch (e: any) {
     toast.error(e.message)
@@ -131,7 +131,6 @@ async function confirmCheckin() {
   try {
     const { data } = await api.post('/api/attendance/check-in', {
       employee_id:       myEmployeeId.value,
-      check_in_time:     new Date().toTimeString().slice(0, 8),
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
@@ -154,7 +153,7 @@ async function startCheckout() {
   gpsStatus.value = 'loading'
   try {
     try { location.value = await getLocation(); gpsStatus.value = 'ok' }
-    catch { gpsStatus.value = 'fail'; location.value = { lat: 0, lng: 0 } }
+    catch { gpsStatus.value = 'fail'; location.value = null }
     await openCamera('checkout')
   } catch (e: any) {
     toast.error(e.message)
@@ -169,7 +168,6 @@ async function confirmCheckout() {
   try {
     const { data } = await api.post('/api/attendance/check-out', {
       employee_id:        myEmployeeId.value,
-      check_out_time:     new Date().toTimeString().slice(0, 8),
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,

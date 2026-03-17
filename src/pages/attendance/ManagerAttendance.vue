@@ -17,10 +17,15 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import api from '@/composables/useApi'
 import { useToastStore } from '@/stores/toast'
+import { useConfirm } from '@/composables/useConfirm'
+import { usePermission } from '@/composables/usePermission'
 import { formatDate, formatTime, todayISO, currentYearMonth } from '@/utils/format'
 import type { AttendanceOut, AttendanceSummary, AttendanceStatus, BranchOut, EmployeeOut } from '@/types'
 
 const toast = useToastStore()
+const { confirm } = useConfirm()
+const { isRole } = usePermission()
+const isSuperAdmin = computed(() => isRole.value('superadmin', 'admin'))
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 // ── Lookup data ───────────────────────────────────────────────────────────
@@ -214,6 +219,26 @@ async function loadSummary() {
     toast.error('Xulosa yuklanmadi')
   } finally {
     summaryLoading.value = false
+  }
+}
+
+// ── DELETE ────────────────────────────────────────────────────────────────
+async function deleteAttendance(rec: AttendanceOut) {
+  const ok = await confirm({
+    title: "O'chirish",
+    message: `${rec.employee?.full_name ?? 'Xodim'} ning ${formatDate(rec.date)} davomatini o'chirmoqchimisiz?`,
+    type: 'warning',
+  })
+  if (!ok) return
+  try {
+    await api.delete(`/api/attendance/${rec.id}`)
+    toast.success("O'chirildi")
+    showDetail.value = false
+    showEdit.value   = false
+    fetchToday()
+    if (activeTab.value === 'history') fetchHistory()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.detail ?? 'Xato yuz berdi')
   }
 }
 
@@ -532,6 +557,14 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
             >
               <component :is="Edit2" class="w-4 h-4" />
             </button>
+            <button
+              v-if="isSuperAdmin"
+              class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              title="O'chirish"
+              @click="detailRec = row; deleteAttendance(row)"
+            >
+              <component :is="Trash2" class="w-4 h-4" />
+            </button>
           </template>
         </AppTable>
 
@@ -762,6 +795,10 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
 
       </div>
       <template #footer>
+        <AppButton v-if="isSuperAdmin" variant="danger" @click="deleteAttendance(detailRec!)">
+          <component :is="Trash2" class="w-4 h-4" />
+          O'chirish
+        </AppButton>
         <AppButton variant="ghost" @click="showDetail = false">Yopish</AppButton>
         <AppButton variant="primary" @click="openEdit(detailRec!)">
           <component :is="Edit2" class="w-4 h-4" />
