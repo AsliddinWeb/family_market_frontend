@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   LayoutDashboard, Users, Building2, FolderOpen,
@@ -7,25 +7,37 @@ import {
   Settings, X,
 } from 'lucide-vue-next'
 import { useUiStore } from '@/stores/ui'
+import { usePermission } from '@/composables/usePermission'
 
-const ui = useUiStore()
+const ui    = useUiStore()
 const route = useRoute()
+const { can, canAny } = usePermission()
 
-// Route o'zgarganda drawer yopilsin
 watch(() => route.path, () => ui.closeDrawer())
 
-const navItems = [
-  { label: 'Dashboard',     to: '/',                 icon: LayoutDashboard },
-  { label: 'Xodimlar',      to: '/employees',        icon: Users           },
-  { label: 'Filiallar',     to: '/branches',         icon: Building2       },
-  { label: "Bo'limlar",     to: '/departments',      icon: FolderOpen      },
-  { label: 'Davomat',       to: '/attendance',       icon: Clock           },
-  { label: 'Oylik',         to: '/salary',           icon: DollarSign      },
-  { label: 'Bonus/Jarima',  to: '/bonus-deductions', icon: Gift            },
-  { label: 'KPI',           to: '/kpi',              icon: BarChart2       },
-  { label: "Ta'tillar",     to: '/leaves',           icon: Umbrella        },
-  { label: 'Sozlamalar',    to: '/settings',         icon: Settings        },
+const allNavItems = [
+  { label: 'Dashboard',    to: '/',                 icon: LayoutDashboard, permission: null },
+  { label: 'Xodimlar',     to: '/employees',        icon: Users,           permission: 'employees' },
+  { label: 'Filiallar',    to: '/branches',         icon: Building2,       permission: 'branches' },
+  { label: "Bo'limlar",    to: '/departments',      icon: FolderOpen,      permission: 'departments' },
+  { label: 'Davomat',      to: '/attendance',       icon: Clock,           permissions: ['attendance', 'attendance.own'] },
+  { label: 'Oylik',        to: '/salary',           icon: DollarSign,      permission: 'salary' },
+  { label: 'Bonus/Jarima', to: '/bonus-deductions', icon: Gift,            permission: 'bonus' },
+  { label: 'KPI',          to: '/kpi',              icon: BarChart2,       permissions: ['kpi', 'kpi.own'] },
+  { label: "Ta'tillar",    to: '/leaves',           icon: Umbrella,        permissions: ['leaves', 'leaves.own'] },
+  { label: 'Sozlamalar',   to: '/settings',         icon: Settings,        permission: 'settings' },
 ]
+
+// Faqat ruxsat berilgan sahifalar
+const navItems = computed(() =>
+  allNavItems.filter(item => {
+    if (item.permission === null) return true
+    if ('permissions' in item && item.permissions) {
+      return item.permissions.some((p: any) => canAny.value(p))
+    }
+    return can.value(item.permission as any)
+  })
+)
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
@@ -43,15 +55,9 @@ function isActive(to: string) {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div
-        v-if="ui.mobileDrawerOpen"
-        class="fixed inset-0 z-40 lg:hidden"
-      >
+      <div v-if="ui.mobileDrawerOpen" class="fixed inset-0 z-40 lg:hidden">
         <!-- Overlay -->
-        <div
-          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-          @click="ui.closeDrawer"
-        />
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="ui.closeDrawer" />
 
         <!-- Drawer panel -->
         <Transition
@@ -83,7 +89,7 @@ function isActive(to: string) {
               </button>
             </div>
 
-            <!-- Nav -->
+            <!-- Nav — faqat ruxsat berilganlar -->
             <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
               <RouterLink
                 v-for="item in navItems"

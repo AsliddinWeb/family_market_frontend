@@ -63,7 +63,8 @@ function getLocation(): Promise<{ lat: number; lng: number }> {
 // ── Camera ──────────────────────────────────────────────────────────────────
 const cameraOpen  = ref(false)
 const cameraMode  = ref<'checkin' | 'checkout'>('checkin')
-const cameraError = ref('')
+const cameraError    = ref('')
+const capturedPhoto  = ref<string | null>(null)
 const videoRef    = ref<HTMLVideoElement | null>(null)
 const canvasRef   = ref<HTMLCanvasElement | null>(null)
 const stream      = ref<MediaStream | null>(null)
@@ -126,14 +127,16 @@ async function startCheckin() {
 }
 
 async function confirmCheckin() {
-  capturePhoto() // foto olinadi, hozircha backend ga yuborilmaydi
+  capturedPhoto.value = capturePhoto()
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-in', {
       employee_id:       myEmployeeId.value,
+      check_in_photo:    capturedPhoto.value,
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
+      source:            'web',
     })
     todayAtt.value = data
     toast.success('Kelish qayd etildi ✅')
@@ -163,14 +166,16 @@ async function startCheckout() {
 }
 
 async function confirmCheckout() {
-  capturePhoto()
+  capturedPhoto.value = capturePhoto()
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-out', {
       employee_id:        myEmployeeId.value,
+      check_out_photo:    capturedPhoto.value,
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
+      source:             'web',
     })
     todayAtt.value = data
     toast.success('Ketish qayd etildi 👋')

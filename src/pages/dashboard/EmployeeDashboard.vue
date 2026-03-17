@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, onUnmounted } from 'vue'
 import {
   LogIn, LogOut, Clock, Umbrella, CheckCircle2,
-  AlertCircle, MapPin, DollarSign, TrendingUp,
+  AlertCircle, MapPin, DollarSign,
 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -36,6 +36,7 @@ const stream         = ref<MediaStream | null>(null)
 const cameraOpen     = ref(false)
 const cameraMode     = ref<'checkin' | 'checkout'>('checkin')
 const cameraError    = ref('')
+const capturedPhoto  = ref<string | null>(null)
 
 // ── Computed ────────────────────────────────────────────────────────────────
 const { year, month } = currentYearMonth()
@@ -158,14 +159,16 @@ async function startCheckin() {
 }
 
 async function confirmCheckin() {
-  capturePhoto()
+  capturedPhoto.value = capturePhoto()
   closeCamera()
   try {
     const { data } = await api.post('/api/attendance/check-in', {
       employee_id:       myEmployeeId.value,
+      check_in_photo:    capturedPhoto.value,
       check_in_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
+      source:            'web',
     })
     todayAtt.value = data
     myAttendance.value = [data, ...myAttendance.value]
@@ -200,9 +203,11 @@ async function confirmCheckout() {
   try {
     const { data } = await api.post('/api/attendance/check-out', {
       employee_id:        myEmployeeId.value,
+      check_out_photo:    capturedPhoto.value,
       check_out_location: location.value
         ? { latitude: location.value.lat, longitude: location.value.lng }
         : null,
+      source:             'web',
     })
     todayAtt.value = data
     const idx = myAttendance.value.findIndex((a: any) => a.id === data.id)

@@ -472,7 +472,7 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
             </div>
             <div class="mt-2">
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {{ rec.source === 'telegram' ? '🤖 Telegram' : rec.source === 'manual' ? '✍️ Qo\'l' : rec.source }}
+                {{ rec.source === 'telegram' ? '🤖 Telegram' : rec.source === 'web' ? '💻 Tizim' : rec.source === 'manual' ? '✍️ Qo\'l' : rec.source }}
               </span>
             </div>
           </div>
@@ -714,7 +714,7 @@ const selectCls = 'w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray
         <div class="flex items-center justify-between text-sm">
           <span class="text-gray-400">Manba</span>
           <span class="font-medium text-gray-700 dark:text-gray-300">
-            {{ detailRec.source === 'telegram' ? '🤖 Telegram bot' : detailRec.source === 'manual' ? '✍️ Qo\'lda kiritilgan' : detailRec.source }}
+            {{ detailRec.source === 'telegram' ? '🤖 Telegram bot' : detailRec.source === 'web' ? '💻 Tizim (Web)' : detailRec.source === 'manual' ? '✍️ Qo\'lda kiritilgan' : detailRec.source }}
           </span>
         </div>
 

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Sun, Moon, Bell, ChevronDown, User, LogOut, KeyRound, Menu } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { Sun, Moon, Bell, ChevronDown, User, LogOut, KeyRound, Menu, RefreshCw } from 'lucide-vue-next'
 import { useUiStore } from '@/stores/ui'
+import { usePermission } from '@/composables/usePermission'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { onClickOutside } from '@vueuse/core'
 
 const ui = useUiStore()
+const { isRole } = usePermission()
+const isEmployee = computed(() => isRole.value('employee'))
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -28,6 +31,10 @@ async function logout() {
   auth.logout()
   await router.push('/login')
 }
+
+function refresh() {
+  window.location.reload()
+}
 </script>
 
 <template>
@@ -41,11 +48,20 @@ async function logout() {
       <component :is="Menu" class="w-5 h-5" />
     </button>
 
-    <!-- Left: page title (desktop) -->
+    <!-- Left: spacer desktop -->
     <div class="hidden lg:block" />
 
     <!-- Right: actions -->
     <div class="flex items-center gap-2">
+
+      <!-- Yangilash (faqat employee, mobile) -->
+      <button
+        v-if="isEmployee"
+        class="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#232736] transition-colors"
+        @click="refresh"
+      >
+        <RefreshCw class="w-4 h-4" />
+      </button>
 
       <!-- Dark mode toggle -->
       <button
@@ -72,13 +88,11 @@ async function logout() {
           class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#232736] transition-colors"
           @click="dropdownOpen = !dropdownOpen"
         >
-          <!-- Avatar -->
           <div class="w-7 h-7 rounded-full bg-primary-500/20 flex items-center justify-center">
             <span class="text-primary-600 dark:text-primary-400 text-xs font-semibold">
               {{ auth.user?.phone?.slice(0, 2) ?? 'U' }}
             </span>
           </div>
-          <!-- Name + role -->
           <div class="hidden sm:flex flex-col items-start leading-none">
             <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
               {{ auth.user?.phone ?? 'Foydalanuvchi' }}
@@ -90,7 +104,6 @@ async function logout() {
           <component :is="ChevronDown" :class="['w-3.5 h-3.5 text-gray-400 transition-transform duration-150', dropdownOpen && 'rotate-180']" />
         </button>
 
-        <!-- Dropdown menu -->
         <Transition
           enter-active-class="transition duration-150 ease-out"
           enter-from-class="opacity-0 scale-95 translate-y-1"
@@ -111,7 +124,6 @@ async function logout() {
               <component :is="User" class="w-4 h-4 text-gray-400" />
               Profil
             </RouterLink>
-
             <RouterLink
               to="/settings"
               class="flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#232736] transition-colors"
@@ -120,9 +132,7 @@ async function logout() {
               <component :is="KeyRound" class="w-4 h-4 text-gray-400" />
               Parol o'zgartirish
             </RouterLink>
-
             <div class="my-1 border-t border-gray-100 dark:border-[#2d3148]" />
-
             <button
               class="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               @click="logout"
